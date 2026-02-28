@@ -1,0 +1,60 @@
+{
+  "name": "interceptr",
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Local API mocking and interception tool for developers",
+  "author": "Patrick Hieber",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pckhib/interceptr.git"
+  },
+  "homepage": "https://github.com/pckhib/interceptr",
+  "bugs": {
+    "url": "https://github.com/pckhib/interceptr/issues"
+  },
+  "keywords": [
+    "api",
+    "mock",
+    "proxy",
+    "interceptor",
+    "developer-tools",
+    "cli"
+  ],
+  "bin": {
+    "interceptr": "./dist/cli.js"
+  },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "prepack": "cp ../../README.md README.md",
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/cli.js",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.0",
+    "@interceptr/shared": "workspace:*",
+    "@readme/openapi-parser": "^4.1.0",
+    "hono": "^4.7.0",
+    "js-yaml": "^4.1.1",
+    "nanoid": "^5.0.9",
+    "path-to-regexp": "^8.2.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^22.0.0",
+    "@vitest/coverage-v8": "^4.0.18",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.18"
+  }
+}

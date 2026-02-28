@@ -37,6 +37,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/cli.js",
+    "lint": "eslint src",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage"
   },

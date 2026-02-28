@@ -4,7 +4,6 @@ import { useEndpoints, useBulkUpdateEndpoints } from '@/hooks/use-endpoints';
 import { useSpecs } from '@/hooks/use-specs';
 import { EndpointCard } from './EndpointCard';
 import { ChevronDown, ChevronRight, Search, Hash, Loader2, Info } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 export function EndpointList() {
   const { data: endpoints, isLoading: isLoadingEndpoints } = useEndpoints();
@@ -52,7 +51,8 @@ export function EndpointList() {
   const toggleTag = (tag: string) => {
     setCollapsedTags((prev) => {
       const next = new Set(prev);
-      next.has(tag) ? next.delete(tag) : next.add(tag);
+      if (next.has(tag)) next.delete(tag);
+      else next.add(tag);
       return next;
     });
   };

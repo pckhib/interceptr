@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { usePresets, useCreatePreset, useDeletePreset, useApplyPreset } from '@/hooks/use-presets';
 import { useEndpoints, useBulkUpdateEndpoints } from '@/hooks/use-endpoints';
 import type { EndpointConfig, Preset, ProxyMode } from '@interceptr/shared';
-import { Zap, Trash2, Play, Wifi, AlertTriangle, Check, ChevronDown, Save, Sparkles, X } from 'lucide-react';
+import { Zap, Trash2, Wifi, AlertTriangle, Check, ChevronDown, Save, Sparkles, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface QuickAction {

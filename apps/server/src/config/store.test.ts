@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ConfigStore } from './store.js';
 import type { EndpointConfig, ProjectSpec, Preset } from '@interceptr/shared';
 
@@ -152,9 +152,8 @@ describe('ConfigStore', () => {
     });
 
     it('switchProject returns true and updates activeProjectId', async () => {
-      const p1 = s.createProject('P1');
+      s.createProject('P1'); // auto-activated, primes the store so p2 is not auto-activated
       const p2 = s.createProject('P2');
-      // p1 is auto-activated; switch to p2
       const result = await s.switchProject(p2.id);
       expect(result).toBe(true);
       expect(s.getConfig().activeProjectId).toBe(p2.id);

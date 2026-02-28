@@ -1,5 +1,6 @@
-import { render, screen, userEvent } from '@/test/test-utils';
-import { Layout, useTheme } from './Layout';
+import { render, screen } from '@/test/test-utils';
+import { Layout } from './Layout';
+import { useTheme } from './use-theme';
 import { MemoryRouter } from 'react-router';
 
 // Mock Header to avoid pulling in its deep dependency tree
@@ -34,14 +35,11 @@ describe('Layout', () => {
 
   it('provides theme context defaulting to dark', () => {
     render(
-      <MemoryRouter
-        hydrationData={{}}
-      >
+      <MemoryRouter>
         <Layout />
       </MemoryRouter>,
-      // Render ThemeConsumer as a route child via the Outlet
     );
-    // Since we can't easily use Outlet, test useTheme via a direct render
+    // useTheme is tested directly in the useTheme describe block below
   });
 });
 

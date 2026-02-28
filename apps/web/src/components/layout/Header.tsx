@@ -4,7 +4,7 @@ import { Power, Settings, Moon, Sun } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ProjectSwitcher } from './ProjectSwitcher';
 import { SpecSelector } from './SpecSelector';
-import { useTheme } from './Layout';
+import { useTheme } from './use-theme';
 import { SettingsModal } from './SettingsModal';
 import logoFull from '@/assets/logo-full.png';
 

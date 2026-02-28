@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { EndpointConfig, Preset } from '@interceptr/shared';
+import type { EndpointConfig } from '@interceptr/shared';
 import { api } from '@/lib/api';
 
 export function usePresets() {

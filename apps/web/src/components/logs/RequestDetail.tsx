@@ -2,7 +2,6 @@ import type { ProxyLogEntry } from '@interceptr/shared';
 import { MethodBadge } from '@/components/endpoints/MethodBadge';
 import { StatusBadge } from './StatusBadge';
 import { X, Clock, Zap, Layers, Braces, ArrowRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface RequestDetailProps {
   entry: ProxyLogEntry;

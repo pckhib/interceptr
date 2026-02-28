@@ -1,0 +1,7 @@
+{
+  "github.copilot.chat.commitMessageGeneration.instructions": [
+    {
+      "text": "Generate commit messages following the Conventional Commits specification (https://www.conventionalcommits.org), which is required by semantic-release to determine version bumps and changelogs.\n\nFormat: <type>[optional scope]: <description>\n\nRules:\n- Use lowercase for type and description\n- Description is imperative, present tense: 'add' not 'added' or 'adds'\n- No period at the end of the description\n- Keep the description under 72 characters\n- Do not include a body unless the change genuinely needs explanation\n\nTypes and their release impact:\n- feat: new feature → triggers a minor version bump\n- fix: bug fix → triggers a patch version bump\n- docs: documentation only\n- refactor: code change that is neither a fix nor a feature\n- test: adding or updating tests\n- chore: maintenance, dependency updates, config changes\n- ci: CI/CD pipeline changes\n- perf: performance improvement\n- build: build system changes\n- style: formatting, whitespace (no logic change)\n\nBreaking changes → triggers a major version bump:\n- Append ! after the type: feat!: drop support for Node 18\n- Or add 'BREAKING CHANGE: <description>' in the footer\n\nExamples:\n  feat(proxy): add support for YAML spec imports\n  fix(store): prevent race condition on concurrent project switches\n  chore: update typescript-eslint to v8\n  feat!: require Node 22 as minimum version"
+    }
+  ]
+}

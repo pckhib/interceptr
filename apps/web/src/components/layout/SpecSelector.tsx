@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useSpecs, useToggleSpec, useDeleteSpec, useUploadSpec, useUploadSpecFromUrl, useUpdateSpec, useReimportSpec } from '@/hooks/use-specs';
-import { Braces, ChevronDown, Trash2, Plus, Upload, FileJson, Link, Globe, Loader2, X, Check, Pencil, RefreshCw, Settings2 } from 'lucide-react';
+import { Braces, ChevronDown, Trash2, Plus, Upload, FileJson, Link, Globe, Loader2, X, Check, RefreshCw, Settings2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function SpecSelector() {

@@ -15,7 +15,7 @@ vi.mock('./SettingsModal', () => ({
 
 // Mock the theme context
 const mockToggleTheme = vi.fn();
-vi.mock('./Layout', () => ({
+vi.mock('./use-theme', () => ({
   useTheme: () => ({ theme: 'dark', toggleTheme: mockToggleTheme }),
 }));
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { RingBuffer } from './ring-buffer.js';
 import type { ProxyLogEntry } from '@interceptr/shared';
 

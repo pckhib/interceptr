@@ -1,6 +1,7 @@
 {
   "name": "interceptr",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "pnpm -r --parallel dev",
     "build": "pnpm -r build && cp -r apps/web/dist apps/server/dist/public",
@@ -15,6 +16,11 @@
     "@semantic-release/github": "^12.0.6",
     "@semantic-release/npm": "^13.1.4",
     "@semantic-release/release-notes-generator": "^14.1.0",
-    "semantic-release": "^25.0.3"
+    "eslint": "^10.0.2",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.3.0",
+    "semantic-release": "^25.0.3",
+    "typescript-eslint": "^8.56.1"
   }
 }

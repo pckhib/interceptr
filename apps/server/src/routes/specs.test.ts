@@ -325,7 +325,7 @@ describe('Specs routes', () => {
         body: JSON.stringify({}),
       });
 
-      const [, , endpointsArg] = (mockStore.reimportSpec as ReturnType<typeof vi.fn>).mock.calls[0];
+      const [, , _endpointsArg] = (mockStore.reimportSpec as ReturnType<typeof vi.fn>).mock.calls[0];
       // metadata passed to reimportSpec should have sourceUrl preserved
       const [, metadataArg] = (mockStore.reimportSpec as ReturnType<typeof vi.fn>).mock.calls[0];
       expect(metadataArg.sourceUrl).toBe(sourceUrl);

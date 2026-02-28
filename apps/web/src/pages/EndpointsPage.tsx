@@ -2,7 +2,6 @@ import { EndpointList } from '@/components/endpoints/EndpointList';
 import { PresetBar } from '@/components/presets/PresetBar';
 import { ActivityFeed } from '@/components/logs/ActivityFeed';
 import { Layers, Activity as ActivityIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 export function EndpointsPage() {
   return (

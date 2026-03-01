@@ -147,7 +147,7 @@ describe('PresetBar', () => {
   it('shows saved presets dropdown with apply and delete', async () => {
     mockEndpoints = [createMockEndpoint({ mode: 'delay', delay: { ms: 500 } })];
     mockPresets = [
-      { name: 'Staging Config', endpoints: { 'ep-1': { mode: 'delay', delay: { ms: 500 } } } },
+      { name: 'Staging Config', endpoints: { 'ep-1': { mode: 'delay', delay: { ms: 500 } } }, createdAt: '2024-01-01T00:00:00.000Z' },
     ];
     const user = userEvent.setup();
     render(<PresetBar />);
@@ -161,7 +161,7 @@ describe('PresetBar', () => {
   it('applies a saved preset when clicked', async () => {
     mockEndpoints = [createMockEndpoint({ mode: 'delay', delay: { ms: 500 } })];
     mockPresets = [
-      { name: 'Staging Config', endpoints: { 'ep-1': { mode: 'delay', delay: { ms: 500 } } } },
+      { name: 'Staging Config', endpoints: { 'ep-1': { mode: 'delay', delay: { ms: 500 } } }, createdAt: '2024-01-01T00:00:00.000Z' },
     ];
     const user = userEvent.setup();
     render(<PresetBar />);
@@ -174,7 +174,7 @@ describe('PresetBar', () => {
   it('deletes a saved preset when delete button is clicked', async () => {
     mockEndpoints = [createMockEndpoint({ mode: 'delay', delay: { ms: 500 } })];
     mockPresets = [
-      { name: 'Old Config', endpoints: { 'ep-1': { mode: 'passthrough' } } },
+      { name: 'Old Config', endpoints: { 'ep-1': { mode: 'passthrough' } }, createdAt: '2024-01-01T00:00:00.000Z' },
     ];
     const user = userEvent.setup();
     render(<PresetBar />);

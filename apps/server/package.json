@@ -43,7 +43,6 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.13.0",
-    "@interceptr/shared": "workspace:*",
     "@readme/openapi-parser": "^4.1.0",
     "hono": "^4.7.0",
     "js-yaml": "^4.1.1",
@@ -51,6 +50,7 @@
     "path-to-regexp": "^8.2.0"
   },
   "devDependencies": {
+    "@interceptr/shared": "workspace:*",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.0.0",
     "@vitest/coverage-v8": "^4.0.18",

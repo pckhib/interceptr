@@ -149,6 +149,28 @@ describe('MockEditor', () => {
     );
   });
 
+  it('formats valid JSON body when Format button is clicked', async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    render(<MockEditor mock={{ ...baseMock, body: '{"a":1,"b":2}' }} onChange={onChange} />);
+
+    await user.click(screen.getByRole('button', { name: /format json/i }));
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ body: '{\n  "a": 1,\n  "b": 2\n}' }),
+    );
+  });
+
+  it('disables Format button when body is empty', () => {
+    render(<MockEditor mock={{ ...baseMock, body: '' }} onChange={() => {}} />);
+    expect(screen.getByRole('button', { name: /format json/i })).toBeDisabled();
+  });
+
+  it('shows error and disables Format button for invalid JSON', async () => {
+    render(<MockEditor mock={{ ...baseMock, body: '{invalid' }} onChange={() => {}} />);
+    expect(await screen.findByRole('button', { name: /format json/i })).toBeDisabled();
+    expect(await screen.findByTestId('json-error')).toBeInTheDocument();
+  });
+
   it('commits on blur of body editor', async () => {
     const onChange = vi.fn();
     render(<MockEditor mock={baseMock} onChange={onChange} />);

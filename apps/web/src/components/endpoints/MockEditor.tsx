@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { MockResponse, SpecResponse } from '@interceptr/shared';
 import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
-import { Hash, Layers, Braces, Sparkles, Plus, X } from 'lucide-react';
+import { Hash, Layers, Braces, Sparkles, Plus, X, WrapText, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface MockEditorProps {
@@ -67,6 +67,7 @@ export function MockEditor({ mock, specResponses, onChange }: MockEditorProps) {
   const [source, setSource] = useState<'preset' | 'manual'>(
     STATUS_PRESETS.includes(mock.statusCode) ? 'preset' : 'manual'
   );
+  const [jsonError, setJsonError] = useState<string | null>(null);
 
   useEffect(() => {
     setStatusCode(mock.statusCode);
@@ -75,12 +76,26 @@ export function MockEditor({ mock, specResponses, onChange }: MockEditorProps) {
     if (!STATUS_PRESETS.includes(mock.statusCode)) setSource('manual');
   }, [mock.statusCode, mock.body, mock.headers]);
 
+  useEffect(() => {
+    if (!body.trim()) { setJsonError(null); return; }
+    try { JSON.parse(body); setJsonError(null); }
+    catch (e) { setJsonError(e instanceof SyntaxError ? e.message : 'Invalid JSON'); }
+  }, [body]);
+
   const commit = useCallback(
     (rows: HeaderRow[], sc: number, b: string) => {
       onChange({ statusCode: sc, headers: toRecord(rows), body: b });
     },
     [onChange],
   );
+
+  const formatJson = () => {
+    try {
+      const formatted = JSON.stringify(JSON.parse(body), null, 2);
+      setBody(formatted);
+      commit(headerRows, statusCode, formatted);
+    } catch {}
+  };
 
   const updateRow = (index: number, field: 'key' | 'value', val: string) => {
     setHeaderRows((prev) => prev.map((r, i) => (i === index ? { ...r, [field]: val } : r)));
@@ -307,11 +322,25 @@ export function MockEditor({ mock, specResponses, onChange }: MockEditorProps) {
         </div>
 
         <div className="space-y-3">
-          <label className="flex items-center gap-2 text-[10px] font-black text-muted-foreground uppercase tracking-widest px-1">
-            <Braces className="w-3.5 h-3.5" />
-            Body
-          </label>
-          <div className="rounded-xl border border-border bg-background overflow-hidden shadow-inner focus-within:ring-1 focus-within:ring-mode-mock">
+          <div className="flex items-center justify-between px-1">
+            <label className="flex items-center gap-2 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+              <Braces className="w-3.5 h-3.5" />
+              Body
+            </label>
+            <button
+              onClick={formatJson}
+              disabled={!!jsonError || !body.trim()}
+              className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-primary hover:text-primary/80 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              aria-label="Format JSON"
+            >
+              <WrapText className="w-3 h-3" />
+              Format
+            </button>
+          </div>
+          <div className={cn(
+            "rounded-xl border bg-background overflow-hidden shadow-inner focus-within:ring-1",
+            jsonError ? "border-destructive/50 focus-within:ring-destructive/50" : "border-border focus-within:ring-mode-mock"
+          )}>
             <CodeMirror
               value={body}
               onChange={setBody}
@@ -327,6 +356,12 @@ export function MockEditor({ mock, specResponses, onChange }: MockEditorProps) {
               className="text-[11px] font-mono"
             />
           </div>
+          {jsonError && (
+            <div className="flex items-start gap-1.5 px-1">
+              <AlertCircle className="w-3 h-3 text-destructive shrink-0 mt-0.5" />
+              <p data-testid="json-error" className="text-[10px] text-destructive font-mono leading-tight">{jsonError}</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

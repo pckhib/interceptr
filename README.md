@@ -1,46 +1,38 @@
 <p align="center">
-  <img src="logo.png" alt="Interceptr" width="420" />
+  <img src="https://raw.githubusercontent.com/pckhib/interceptr/main/logo.png" alt="Interceptr" width="420" />
 </p>
 
 <p align="center">
-  <strong>A local API proxy for intercepting, mocking, and manipulating HTTP traffic during development.</strong>
+  <a href="https://github.com/pckhib/interceptr/actions/workflows/release.yml"><img src="https://img.shields.io/github/actions/workflow/status/pckhib/interceptr/release.yml?branch=main&label=release&color=4f46e5&labelColor=1e1b4b&style=flat-square" alt="release status" /></a>
+  <a href="https://www.npmjs.com/package/interceptr"><img src="https://img.shields.io/npm/v/interceptr?color=4f46e5&labelColor=1e1b4b&style=flat-square" alt="npm version" /></a>
+  <a href="https://www.npmjs.com/package/interceptr"><img src="https://img.shields.io/npm/dm/interceptr?color=4f46e5&labelColor=1e1b4b&style=flat-square" alt="npm downloads" /></a>
+  <a href="https://nodejs.org"><img src="https://img.shields.io/node/v/interceptr?color=4f46e5&labelColor=1e1b4b&style=flat-square" alt="Node.js version" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/npm/l/interceptr?color=4f46e5&labelColor=1e1b4b&style=flat-square" alt="MIT license" /></a>
 </p>
 
 <p align="center">
-  Import your OpenAPI specs, configure per-endpoint behavior, and switch between environments — all from a clean web UI.
+  <strong>A local HTTP proxy for mocking, intercepting, and delaying API calls — with a browser-based UI.</strong>
+</p>
+
+<p align="center">
+  Import your OpenAPI / Swagger spec, control each endpoint individually (pass, delay, or mock), and watch live traffic in real time. No code changes. No config files. Just run it and point your app at the proxy.
 </p>
 
 ---
 
-## Features
-
-- **Consolidated Workspace** — Manage endpoints and monitor traffic in a single, high-efficiency two-panel view.
-- **OpenAPI Integration** — Import specs via URL or file upload. Supports OpenAPI 3.0/3.1 (JSON/YAML) with automatic response example generation.
-- **Per-Endpoint & Group Control** — Set proxy modes (Pass, Delay, Mock) for individual endpoints or entire tag groups.
-- **Precision Mocking** — Populate mock responses instantly using examples from your OpenAPI spec, or create custom ones with a built-in JSON editor.
-- **Live Traffic Monitor** — Inspect real-time request/response cycles with a dense, searchable activity feed and detailed inspector drawer.
-- **Multi-Environment Support** — Organize work into projects and switch between multiple specifications (e.g., local, staging) with a single click.
-- **Presets** — Save and restore complete endpoint configurations. Includes built-in quick actions (Pass All, Slow, Errors).
-- **Theme Support** — Professional-grade "Midnight Blue" dark mode and a clean, high-contrast light mode.
-
-## Getting Started
-
-### Install from npm
-
-**Run without installing** (recommended for trying it out):
+## Quick Start
 
 ```bash
 npx interceptr
 ```
 
-**Install globally** and run anytime:
+Then open **http://localhost:3001** in your browser. Point your app (or Postman, curl, etc.) at **http://localhost:4000** — traffic will be intercepted and handled based on your settings.
 
 ```bash
+# Install globally
 npm install -g interceptr
-interceptr
+interceptr --port 3001
 ```
-
-Once running, open [http://localhost:3001](http://localhost:3001) in your browser to access the management UI. The proxy listens on [http://localhost:4000](http://localhost:4000) — point your app there to start intercepting traffic.
 
 ### CLI Options
 
@@ -50,123 +42,68 @@ Once running, open [http://localhost:3001](http://localhost:3001) in your browse
 
 ---
 
-### Development (from source)
+## What Is It For?
 
-#### Prerequisites
+Interceptr runs as a **local reverse proxy** that sits between your frontend (or any HTTP client) and your real backend. Once your OpenAPI/Swagger spec is imported, you can control every endpoint without touching your application code:
 
-- **Node.js** >= 22
-- **pnpm** >= 10
+- **Frontend dev without a backend** — mock any endpoint with a custom JSON response
+- **Simulate slow networks** — inject configurable latency per endpoint
+- **Test error handling** — force 4xx/5xx responses on demand
+- **Switch environments instantly** — toggle between local, staging, or mock mode per endpoint
+- **Debug API issues** — inspect full request/response cycles in the live traffic monitor
 
-#### Install & Run
+---
 
-```bash
-# Install dependencies
-pnpm install
+## Features
 
-# Start both servers in dev mode
-pnpm dev
-```
+- **OpenAPI / Swagger Import** — Load specs from a URL or file upload. Supports OpenAPI 3.0 and 3.1, JSON and YAML. Mock responses are auto-populated from spec examples.
+- **Per-Endpoint Proxy Modes** — Choose **Pass** (forward to upstream), **Delay** (inject latency + jitter), or **Mock** (serve custom response) for each endpoint individually.
+- **Group Actions** — Apply a mode to all endpoints in a tag group at once.
+- **Live Traffic Monitor** — Watch request/response cycles in real time. Filter by method, status code, or proxy mode. Click any entry to inspect headers and JSON body.
+- **Presets** — Save and restore full endpoint configurations. Built-in actions: Pass All, Slow All, Error All.
+- **Multi-Project & Multi-Spec** — Organize work into projects. Toggle multiple specs (e.g., local + staging) simultaneously.
+- **Global Response Headers** — Inject headers (e.g., CORS) across all responses for a spec, overridable per endpoint.
+- **Conditional Rules** — Define per-request overrides based on request count, random failure rate, or header matching.
+- **No Config Files** — Everything is managed from the web UI and persisted automatically as JSON.
+- **Theme Support** — Dark mode (Midnight Blue) and high-contrast light mode.
 
-This starts:
-- **Management UI** at [http://localhost:5173](http://localhost:5173)
-- **Management API** at [http://localhost:3001](http://localhost:3001)
-- **Proxy server** at [http://localhost:4000](http://localhost:4000)
-
-#### Lint
-
-```bash
-# Lint all packages
-pnpm lint
-
-# Lint a specific package
-pnpm --filter interceptr lint
-pnpm --filter @interceptr/web lint
-```
-
-#### Production Build & Run
-
-```bash
-# Build all packages
-pnpm build
-
-# Run the built app
-pnpm start
-```
+---
 
 ## Usage
 
-### 1. Global Navigation
+### 1. Import a Spec
 
-All primary controls are in the top header:
-- **Project Switcher**: Create or switch between different projects.
-- **Spec Selector**: Import, reimport, configure upstream URLs, and toggle active specifications.
-- **Proxy Control**: Start/Stop the proxy engine and monitor listener status.
-- **System Settings**: Access project renaming, port configuration, data export/import, and version info.
+Click **Select Spec** in the header → **+** → paste a URL (e.g. `https://petstore.swagger.io/v2/swagger.json`) or upload a `.json` / `.yaml` file.
 
-### 2. Endpoints Registry (Left Panel)
+### 2. Configure Endpoints
 
-Configure how traffic is handled per endpoint or by group:
+The **Endpoints Registry** lists every operation from your spec, grouped by tag.
 
 | Mode | Behavior |
 |---|---|
 | **Pass** | Forwards the request to the upstream server unchanged. |
 | **Delay** | Simulates latency. Configure milliseconds and optional jitter. |
-| **Mock** | Overrides the response. Use "Spec Defined Responses" to instantly populate data from your OpenAPI definitions. |
+| **Mock** | Returns a custom response. Use spec-defined examples or write your own JSON. |
 
-**Group Actions**: Apply a mode to all endpoints in a tag group with a single click.
+Click an endpoint to open the editor. Use **group action buttons** (Pass / Delay / Mock) above each tag group to apply a mode to all endpoints at once.
 
-### 3. Traffic Monitor (Right Panel)
+### 3. Monitor Traffic
 
-Monitor flows in real-time:
-- **Live Stream**: View incoming requests as they hit the proxy.
-- **Filters**: Isolate traffic by Method, Status Code range (2xx/4xx/5xx), or Proxy Mode.
-- **Inspector**: Click any entry to open a detail drawer showing full request/response headers and formatted JSON bodies.
-- **Clear Logs**: Remove all recorded entries from the buffer.
+The **Traffic Monitor** (right panel) streams every request in real time. Click any entry to inspect the full request/response — headers, status code, body, and matched endpoint.
 
-### 4. Presets
+### 4. Use Presets
 
-Use the **Preset Bar** to quickly apply complete configurations.
+The **Preset Bar** lets you save and restore complete endpoint configurations. Built-in quick actions:
 
-**Built-in quick actions:**
-- **Pass All**: Instant bypass for all endpoints.
-- **Slow**: Set all endpoints to a 2000ms delay.
-- **Errors**: Set all endpoints to return a 500 mock response.
-
-**Saved presets:**
-- Save your current endpoint configuration under a custom name.
-- Apply any saved preset to instantly restore that configuration.
+- **Pass All** — Instant bypass for all endpoints
+- **Slow** — Set all endpoints to 2000 ms delay
+- **Errors** — Set all endpoints to return 500
 
 ### 5. Point Your App at the Proxy
 
-Point your application to `http://localhost:4000` (or your configured port). Traffic will be intercepted and manipulated based on your active registry settings.
+Set your app's base URL (or `HTTP_PROXY` / `HTTPS_PROXY` env var) to `http://localhost:4000`. All matching traffic will be intercepted.
 
-## Testing
-
-### Run All Tests
-
-```bash
-pnpm test
-```
-
-### Backend (apps/server)
-
-```bash
-# Run tests
-pnpm --filter interceptr test
-
-# Run with coverage
-pnpm --filter interceptr test:coverage
-```
-
-### Frontend (apps/web)
-
-```bash
-# Run tests
-pnpm --filter @interceptr/web test
-
-# Run with coverage
-pnpm --filter @interceptr/web test:coverage
-```
+---
 
 ## Architecture
 
@@ -180,8 +117,7 @@ pnpm --filter @interceptr/web test:coverage
 │  :3001       │  Vite :5173  │  types        │
 │              │              │               │
 │  Proxy       │  Tailwind v4 │               │
-│  :4000       │  OKLCH Theme │               │
-│              │  TanStack    │               │
+│  :4000       │  TanStack    │               │
 └──────────────┴──────────────┴───────────────┘
 ```
 
@@ -189,13 +125,12 @@ pnpm --filter @interceptr/web test:coverage
 |---|---|
 | **Management API** | Hono on port 3001 |
 | **Proxy Server** | Hono on port 4000 |
-| **Frontend** | React 19, Vite, Tailwind v4 (OKLCH), TanStack Query, React Router v7 |
-| **Shared** | TypeScript types |
-| **Storage** | JSON files in `data/` directory |
+| **Frontend** | React 19, Vite, Tailwind v4, TanStack Query, React Router v7 |
+| **Storage** | JSON files in `data/` |
 | **Live Feed** | Server-Sent Events (SSE) |
-| **Testing** | Vitest, Testing Library, jsdom |
-| **Linting** | ESLint 10, typescript-eslint, eslint-plugin-react-hooks |
-| **Releases** | semantic-release (Conventional Commits) |
+| **Testing** | Vitest, Testing Library |
+
+---
 
 ## API Reference
 
@@ -220,7 +155,7 @@ The management API runs on port 3001. All endpoints are prefixed with `/api`.
 | `POST` | `/specs` | Upload a spec (body: `{spec, name, upstreamUrl?}`) |
 | `POST` | `/specs/url` | Import a spec from URL (body: `{url, name}`) |
 | `POST` | `/specs/:id/reimport` | Reimport from source URL or new body |
-| `PUT` | `/specs/:id` | Update spec metadata (body: `{name?, upstreamUrl?, active?}`) |
+| `PUT` | `/specs/:id` | Update spec metadata (body: `{name?, upstreamUrl?, active?, globalHeaders?}`) |
 | `PUT` | `/specs/:id/toggle` | Toggle spec active state |
 | `DELETE` | `/specs/:id` | Delete a spec |
 
@@ -232,7 +167,7 @@ The management API runs on port 3001. All endpoints are prefixed with `/api`.
 | `PUT` | `/endpoints/:id` | Update endpoint config |
 | `PUT` | `/endpoints/bulk` | Bulk update endpoints (body: `{[id]: Partial<EndpointConfig>}`) |
 
-The endpoint config body supports a `conditionalRules` array for request-time overrides. Each rule has a `type` of `nth-request`, `random-failure`, or `header-match`, and a `response` to serve when triggered. These rules are evaluated before the endpoint's base mode.
+The endpoint config supports a `conditionalRules` array for request-time overrides. Each rule has a `type` of `nth-request`, `random-failure`, or `header-match`, and a `response` served when triggered.
 
 ### Presets
 
@@ -274,20 +209,57 @@ The endpoint config body supports a `conditionalRules` array for request-time ov
 |---|---|---|
 | `GET` | `/health` | Health check — returns `{status: "ok", version}` |
 
+---
+
 ## Data Storage
 
 All data is stored as JSON files in the `data/` directory:
 
 ```
 data/
-  global.json                  # Global config + project list
-  logs.json                    # Persisted activity logs (ring buffer)
+  global.json          # Global config + project list
+  logs.json            # Activity logs (500-entry ring buffer)
   projects/
-    <project-id>.json          # Specs, endpoints, and presets per project
+    <project-id>.json  # Specs, endpoints, and presets per project
 ```
 
-Logs are kept in a 500-entry ring buffer that persists across server restarts. All writes are debounced (1 second) to avoid excessive disk I/O.
+Writes are debounced (1 second) to avoid excessive disk I/O.
+
+---
+
+## Development
+
+### Prerequisites
+
+- **Node.js** >= 22
+- **pnpm** >= 10
+
+### Install & Run
+
+```bash
+pnpm install
+pnpm dev
+```
+
+Starts:
+- **Management UI** at http://localhost:5173
+- **Management API** at http://localhost:3001
+- **Proxy server** at http://localhost:4000
+
+### Test
+
+```bash
+pnpm test
+```
+
+### Build
+
+```bash
+pnpm build && pnpm start
+```
+
+---
 
 ## License
 
-[MIT License](LICENSE)
+[MIT](LICENSE)

@@ -7,7 +7,34 @@ import { recompileRoutes } from './routes/helpers.js';
 import { startProxy, stopProxy } from './proxy/lifecycle.js';
 import { version } from './version.js';
 
-const MANAGEMENT_PORT = 3001;
+function parseArgs(): { port: number } {
+  const args = process.argv.slice(2);
+  let port = 3001;
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    let raw: string | undefined;
+
+    if (arg === '--port' || arg === '-p') {
+      raw = args[++i];
+    } else if (arg.startsWith('--port=')) {
+      raw = arg.slice('--port='.length);
+    }
+
+    if (raw !== undefined) {
+      const parsed = parseInt(raw, 10);
+      if (isNaN(parsed) || parsed < 1 || parsed > 65535) {
+        console.error(`Invalid port: "${raw}". Must be a number between 1 and 65535.`);
+        process.exit(1);
+      }
+      port = parsed;
+    }
+  }
+
+  return { port };
+}
+
+const { port: MANAGEMENT_PORT } = parseArgs();
 
 function banner(lines: string[]): string {
   const width = Math.max(...lines.map((l) => l.length)) + 4;

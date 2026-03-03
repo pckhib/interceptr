@@ -42,6 +42,12 @@ interceptr
 
 Once running, open [http://localhost:3001](http://localhost:3001) in your browser to access the management UI. The proxy listens on [http://localhost:4000](http://localhost:4000) — point your app there to start intercepting traffic.
 
+### CLI Options
+
+| Flag | Alias | Default | Description |
+|---|---|---|---|
+| `--port` | `-p` | `3001` | Port for the management UI and API |
+
 ---
 
 ### Development (from source)

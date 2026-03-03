@@ -6,7 +6,6 @@ vi.mock('@/hooks/use-projects', () => ({
   useActiveProject: () => ({
     data: { id: 'p1', name: 'Test Project', createdAt: '', updatedAt: '' },
   }),
-  useRenameProject: () => ({ mutate: vi.fn() }),
 }));
 
 vi.mock('@/lib/api', () => ({
@@ -40,14 +39,8 @@ describe('SettingsModal', () => {
 
   it('shows Configuration tab by default', () => {
     render(<SettingsModal open={true} onClose={() => {}} />);
-    expect(screen.getByText('Project Identity')).toBeInTheDocument();
     expect(screen.getByText('Network Environment')).toBeInTheDocument();
     expect(screen.getByText('Data Sovereignty')).toBeInTheDocument();
-  });
-
-  it('shows the active project name', () => {
-    render(<SettingsModal open={true} onClose={() => {}} />);
-    expect(screen.getByText('Test Project')).toBeInTheDocument();
   });
 
   it('shows proxy port input', () => {
@@ -116,33 +109,6 @@ describe('SettingsModal', () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it('shows Rename button for active project', () => {
-    render(<SettingsModal open={true} onClose={() => {}} />);
-    expect(screen.getByText('Rename')).toBeInTheDocument();
-  });
-
-  it('opens rename form when Rename is clicked', async () => {
-    const user = userEvent.setup();
-    render(<SettingsModal open={true} onClose={() => {}} />);
-
-    await user.click(screen.getByText('Rename'));
-    // Should show an input with the project name and check/X buttons
-    expect(screen.getByDisplayValue('Test Project')).toBeInTheDocument();
-  });
-
-  it('cancels rename when X button is clicked', async () => {
-    const user = userEvent.setup();
-    render(<SettingsModal open={true} onClose={() => {}} />);
-
-    await user.click(screen.getByText('Rename'));
-    // Click the X cancel button in the rename form
-    const xButtons = screen.getAllByRole('button').filter(btn => btn.querySelector('.lucide-x'));
-    // The first X is the modal close, the second is the rename cancel
-    await user.click(xButtons[1]);
-    // Should go back to showing the Rename button
-    expect(screen.getByText('Rename')).toBeInTheDocument();
-  });
-
   it('changes proxy port value', async () => {
     const user = userEvent.setup();
     render(<SettingsModal open={true} onClose={() => {}} />);
@@ -193,7 +159,7 @@ describe('SettingsModal', () => {
     // Go back to Config tab
     const configTab = screen.getAllByRole('button').find(btn => btn.textContent === 'Configuration');
     await user.click(configTab!);
-    expect(screen.getByText('Project Identity')).toBeInTheDocument();
+    expect(screen.getByText('Network Environment')).toBeInTheDocument();
   });
 
   it('calls onClose when Close button on About tab is clicked', async () => {

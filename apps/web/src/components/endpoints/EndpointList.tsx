@@ -3,7 +3,7 @@ import type { EndpointConfig, ProjectSpec, ProxyMode } from '@interceptr/shared'
 import { useEndpoints, useBulkUpdateEndpoints } from '@/hooks/use-endpoints';
 import { useSpecs } from '@/hooks/use-specs';
 import { EndpointCard } from './EndpointCard';
-import { ChevronDown, ChevronRight, Search, Hash, Loader2, Info } from 'lucide-react';
+import { ChevronDown, ChevronRight, Search, Hash, Loader2, Info, X } from 'lucide-react';
 
 export function EndpointList() {
   const { data: endpoints, isLoading: isLoadingEndpoints } = useEndpoints();
@@ -112,8 +112,17 @@ export function EndpointList() {
           placeholder="Search by path, method, or operation..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 text-sm font-bold rounded-xl border border-border/60 bg-card/30 backdrop-blur-sm placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary/40 shadow-sm transition-all"
+          className="w-full pl-10 pr-9 py-2.5 text-sm font-bold rounded-xl border border-border/60 bg-card/30 backdrop-blur-sm placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary/40 shadow-sm transition-all"
         />
+        {search && (
+          <button
+            onClick={() => setSearch('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground/40 hover:text-foreground rounded transition-colors"
+            aria-label="Clear search"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
 
       <div className="space-y-8">

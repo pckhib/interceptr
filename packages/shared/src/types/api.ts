@@ -14,6 +14,7 @@ export interface ProjectSpec {
   upstreamUrl: string;
   active: boolean;
   metadata: SpecMetadata;
+  globalHeaders?: Record<string, string>;
 }
 
 export interface GlobalConfig {

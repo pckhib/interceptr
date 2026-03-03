@@ -49,7 +49,7 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ url, name }),
       }),
-    update: (specId: string, data: { name?: string; upstreamUrl?: string; active?: boolean }) =>
+    update: (specId: string, data: { name?: string; upstreamUrl?: string; active?: boolean; globalHeaders?: Record<string, string> }) =>
       request<ProjectSpec>(`/specs/${specId}`, { method: 'PUT', body: JSON.stringify(data) }),
     toggle: (specId: string) =>
       request<ProjectSpec>(`/specs/${specId}/toggle`, { method: 'PUT' }),

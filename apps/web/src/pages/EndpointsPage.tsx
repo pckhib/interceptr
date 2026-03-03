@@ -1,9 +1,13 @@
+import { useState } from 'react';
 import { EndpointList } from '@/components/endpoints/EndpointList';
+import { GlobalHeadersPanel, GlobalHeadersTrigger } from '@/components/endpoints/GlobalHeadersPanel';
 import { PresetBar } from '@/components/presets/PresetBar';
 import { ActivityFeed } from '@/components/logs/ActivityFeed';
 import { Layers, Activity as ActivityIcon } from 'lucide-react';
 
 export function EndpointsPage() {
+  const [globalHeadersOpen, setGlobalHeadersOpen] = useState(false);
+
   return (
     <div className="flex h-full overflow-hidden bg-background">
       {/* Left Panel: Endpoints */}
@@ -15,9 +19,14 @@ export function EndpointsPage() {
              </div>
              <h2 className="text-sm font-black uppercase tracking-widest text-foreground">Endpoints Registry</h2>
           </div>
-          <PresetBar />
+          <div className="flex items-center gap-2">
+            <GlobalHeadersTrigger open={globalHeadersOpen} onToggle={() => setGlobalHeadersOpen((v) => !v)} />
+            <PresetBar />
+          </div>
         </div>
-        
+
+        <GlobalHeadersPanel open={globalHeadersOpen} />
+
         <div className="flex-1 overflow-y-auto p-6">
           <div className="max-w-5xl mx-auto space-y-6">
             <EndpointList />

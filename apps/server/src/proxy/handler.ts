@@ -1,6 +1,7 @@
 import { nanoid } from 'nanoid';
 import type { EndpointConfig, ProxyLogEntry } from '@interceptr/shared';
 import { matchRequest, getDefaultUpstreamUrl } from './matcher.js';
+import { store } from '../config/store.js';
 import { logBuffer } from '../logging/ring-buffer.js';
 import { sseEmitter } from '../logging/sse.js';
 
@@ -66,12 +67,16 @@ export async function handleProxyRequest(req: Request): Promise<Response> {
   }
 
   const mode = endpoint?.mode ?? 'passthrough';
+  const globalHeaders = endpoint ? (store.getSpec(endpoint.specId)?.globalHeaders ?? {}) : {};
 
   let response: Response;
 
   try {
     if (mode === 'mock' && endpoint?.mock) {
-      const headers = new Headers(endpoint.mock.headers);
+      // Global headers are the base; per-endpoint mock headers take priority
+      const headers = new Headers();
+      for (const [k, v] of Object.entries(globalHeaders)) headers.set(k, v);
+      for (const [k, v] of Object.entries(endpoint.mock.headers)) headers.set(k, v);
       if (!headers.has('content-type')) {
         headers.set('content-type', 'application/json');
       }
@@ -96,6 +101,13 @@ export async function handleProxyRequest(req: Request): Promise<Response> {
       });
 
       response = await fetch(upstreamReq);
+
+      // Inject global headers into the upstream response
+      if (Object.keys(globalHeaders).length > 0) {
+        const newHeaders = new Headers(response.headers);
+        for (const [k, v] of Object.entries(globalHeaders)) newHeaders.set(k, v);
+        response = new Response(response.body, { status: response.status, headers: newHeaders });
+      }
     } else {
       response = new Response(
         JSON.stringify({ error: 'No matching endpoint or upstream URL configured' }),

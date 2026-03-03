@@ -188,7 +188,7 @@ specs.post('/:specId/reimport', async (c) => {
 // Update spec (name, upstreamUrl, active)
 specs.put('/:specId', async (c) => {
   const specId = c.req.param('specId');
-  const body = await c.req.json<{ name?: string; upstreamUrl?: string; active?: boolean }>();
+  const body = await c.req.json<{ name?: string; upstreamUrl?: string; active?: boolean; globalHeaders?: Record<string, string> }>();
   const updated = store.updateSpec(specId, body);
   if (!updated) return c.json({ error: 'Spec not found' }, 404);
   recompileRoutes();

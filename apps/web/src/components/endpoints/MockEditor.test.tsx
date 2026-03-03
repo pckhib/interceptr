@@ -38,10 +38,12 @@ describe('MockEditor', () => {
     );
   });
 
-  it('renders headers textarea with formatted headers', () => {
+  it('renders existing headers as key/value rows', () => {
     render(<MockEditor mock={baseMock} onChange={() => {}} />);
-    const textarea = screen.getByPlaceholderText('content-type: application/json');
-    expect(textarea).toHaveValue('content-type: application/json');
+    const keyInputs = screen.getAllByPlaceholderText('Header-Name');
+    const valueInputs = screen.getAllByPlaceholderText('value');
+    expect(keyInputs[0]).toHaveValue('content-type');
+    expect(valueInputs[0]).toHaveValue('application/json');
   });
 
   it('renders spec responses when provided', () => {
@@ -83,23 +85,67 @@ describe('MockEditor', () => {
     const statusInput = screen.getByDisplayValue('200');
     await user.clear(statusInput);
     await user.type(statusInput, '418');
-    await user.tab(); // triggers blur
+    await user.tab();
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({ statusCode: 418 }),
     );
   });
 
-  it('commits on blur of headers textarea', async () => {
+  it('commits on blur of header value input', async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
     render(<MockEditor mock={baseMock} onChange={onChange} />);
 
-    const textarea = screen.getByPlaceholderText('content-type: application/json');
-    await user.clear(textarea);
-    await user.type(textarea, 'x-custom: value');
-    await user.tab(); // triggers blur
+    const valueInput = screen.getAllByPlaceholderText('value')[0];
+    await user.clear(valueInput);
+    await user.type(valueInput, 'text/plain');
+    await user.tab();
     expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({ headers: { 'x-custom': 'value' } }),
+      expect.objectContaining({ headers: { 'content-type': 'text/plain' } }),
+    );
+  });
+
+  it('adds a new empty header row via Add button', async () => {
+    const user = userEvent.setup();
+    render(<MockEditor mock={baseMock} onChange={() => {}} />);
+
+    const before = screen.getAllByPlaceholderText('Header-Name').length;
+    await user.click(screen.getByRole('button', { name: /add header/i }));
+    const after = screen.getAllByPlaceholderText('Header-Name').length;
+    expect(after).toBe(before + 1);
+  });
+
+  it('removes a header row via remove button', async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    render(<MockEditor mock={baseMock} onChange={onChange} />);
+
+    await user.click(screen.getByRole('button', { name: /remove header/i }));
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ headers: {} }),
+    );
+  });
+
+  it('quick-add chip adds a header with default value', async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    render(<MockEditor mock={{ statusCode: 200, headers: {}, body: '' }} onChange={onChange} />);
+
+    await user.click(screen.getByRole('button', { name: 'No-Cache' }));
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ headers: { 'cache-control': 'no-cache' } }),
+    );
+  });
+
+  it('quick-add chip updates existing header instead of duplicating', async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    render(<MockEditor mock={baseMock} onChange={onChange} />);
+
+    // baseMock already has content-type: application/json; clicking Text should update it
+    await user.click(screen.getByRole('button', { name: 'Text' }));
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ headers: { 'content-type': 'text/plain' } }),
     );
   });
 
@@ -112,20 +158,6 @@ describe('MockEditor', () => {
     fireEvent.blur(bodyEditor);
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({ body: '{"hello":"world"}' }),
-    );
-  });
-
-  it('parses headers ignoring lines without colons', async () => {
-    const onChange = vi.fn();
-    const user = userEvent.setup();
-    render(<MockEditor mock={baseMock} onChange={onChange} />);
-
-    const textarea = screen.getByPlaceholderText('content-type: application/json');
-    await user.clear(textarea);
-    await user.type(textarea, 'x-key: val{enter}badline');
-    await user.tab();
-    expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({ headers: { 'x-key': 'val' } }),
     );
   });
 });

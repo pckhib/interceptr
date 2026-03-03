@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { MockResponse, SpecResponse } from '@interceptr/shared';
 import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
-import { Hash, Layers, Braces, Sparkles } from 'lucide-react';
+import { Hash, Layers, Braces, Sparkles, Plus, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface MockEditorProps {
@@ -13,14 +13,57 @@ interface MockEditorProps {
 
 const STATUS_PRESETS = [200, 201, 204, 400, 401, 403, 404, 500, 502, 503];
 
+const COMMON_HEADER_NAMES = [
+  'Content-Type',
+  'Cache-Control',
+  'Authorization',
+  'Location',
+  'Retry-After',
+  'WWW-Authenticate',
+  'ETag',
+  'Last-Modified',
+  'Content-Encoding',
+  'Content-Length',
+  'X-Request-ID',
+  'X-RateLimit-Limit',
+  'X-RateLimit-Remaining',
+  'Access-Control-Allow-Origin',
+];
+
+const CONTENT_TYPE_PRESETS = [
+  'application/json',
+  'text/plain',
+  'text/html',
+  'application/xml',
+  'application/octet-stream',
+];
+
+const QUICK_ADD_HEADERS: { key: string; value: string; label: string }[] = [
+  { key: 'content-type', value: 'application/json', label: 'JSON' },
+  { key: 'content-type', value: 'text/plain', label: 'Text' },
+  { key: 'cache-control', value: 'no-cache', label: 'No-Cache' },
+  { key: 'location', value: '/', label: 'Location' },
+  { key: 'retry-after', value: '5', label: 'Retry-After' },
+];
+
+type HeaderRow = { key: string; value: string };
+
+function toRows(headers: Record<string, string>): HeaderRow[] {
+  return Object.entries(headers).map(([key, value]) => ({ key, value }));
+}
+
+function toRecord(rows: HeaderRow[]): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const { key, value } of rows) {
+    if (key.trim()) out[key.trim().toLowerCase()] = value.trim();
+  }
+  return out;
+}
+
 export function MockEditor({ mock, specResponses, onChange }: MockEditorProps) {
   const [statusCode, setStatusCode] = useState(mock.statusCode);
   const [body, setBody] = useState(mock.body);
-  const [headersText, setHeadersText] = useState(
-    Object.entries(mock.headers)
-      .map(([k, v]) => `${k}: ${v}`)
-      .join('\n'),
-  );
+  const [headerRows, setHeaderRows] = useState<HeaderRow[]>(() => toRows(mock.headers));
   const [source, setSource] = useState<'preset' | 'manual'>(
     STATUS_PRESETS.includes(mock.statusCode) ? 'preset' : 'manual'
   );
@@ -28,39 +71,52 @@ export function MockEditor({ mock, specResponses, onChange }: MockEditorProps) {
   useEffect(() => {
     setStatusCode(mock.statusCode);
     setBody(mock.body);
-    setHeadersText(
-      Object.entries(mock.headers)
-        .map(([k, v]) => `${k}: ${v}`)
-        .join('\n'),
-    );
-    if (!STATUS_PRESETS.includes(mock.statusCode)) {
-      setSource('manual');
-    }
+    setHeaderRows(toRows(mock.headers));
+    if (!STATUS_PRESETS.includes(mock.statusCode)) setSource('manual');
   }, [mock.statusCode, mock.body, mock.headers]);
 
-  const commit = useCallback(() => {
-    const headers: Record<string, string> = {};
-    for (const line of headersText.split('\n')) {
-      const idx = line.indexOf(':');
-      if (idx > 0) {
-        headers[line.slice(0, idx).trim()] = line.slice(idx + 1).trim();
-      }
-    }
-    onChange({ statusCode, headers, body });
-  }, [statusCode, headersText, body, onChange]);
+  const commit = useCallback(
+    (rows: HeaderRow[], sc: number, b: string) => {
+      onChange({ statusCode: sc, headers: toRecord(rows), body: b });
+    },
+    [onChange],
+  );
+
+  const updateRow = (index: number, field: 'key' | 'value', val: string) => {
+    setHeaderRows((prev) => prev.map((r, i) => (i === index ? { ...r, [field]: val } : r)));
+  };
+
+  const removeRow = (index: number) => {
+    setHeaderRows((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      commit(next, statusCode, body);
+      return next;
+    });
+  };
+
+  const addRow = () => setHeaderRows((prev) => [...prev, { key: '', value: '' }]);
+
+  const quickAddHeader = (key: string, value: string) => {
+    setHeaderRows((prev) => {
+      const idx = prev.findIndex((r) => r.key.toLowerCase() === key.toLowerCase());
+      const next =
+        idx >= 0
+          ? prev.map((r, i) => (i === idx ? { key: r.key, value } : r))
+          : [...prev, { key, value }];
+      commit(next, statusCode, body);
+      return next;
+    });
+  };
 
   const selectSpecResponse = (resp: SpecResponse) => {
-    setStatusCode(resp.statusCode);
+    const sc = resp.statusCode;
+    const newHeaders = resp.headers ?? { 'content-type': 'application/json' };
+    const b = resp.body ?? '';
+    setStatusCode(sc);
     setSource('manual');
-    const newHeaders = resp.headers || { 'content-type': 'application/json' };
-    setHeadersText(Object.entries(newHeaders).map(([k, v]) => `${k}: ${v}`).join('\n'));
-    setBody(resp.body || '');
-    
-    onChange({ 
-      statusCode: resp.statusCode, 
-      headers: newHeaders, 
-      body: resp.body || '' 
-    });
+    setHeaderRows(toRows(newHeaders));
+    setBody(b);
+    onChange({ statusCode: sc, headers: newHeaders, body: b });
   };
 
   return (
@@ -78,11 +134,16 @@ export function MockEditor({ mock, specResponses, onChange }: MockEditorProps) {
                 onClick={() => selectSpecResponse(resp)}
                 className="flex items-start gap-3 p-3 text-left rounded-xl border border-border bg-card hover:border-primary/40 hover:bg-primary/5 transition-all group"
               >
-                <span className={cn(
-                  "px-1.5 py-0.5 text-[10px] font-black font-mono rounded border shrink-0",
-                  resp.statusCode < 300 ? "text-emerald-400 border-emerald-400/30" : 
-                  resp.statusCode < 500 ? "text-amber-400 border-amber-400/30" : "text-rose-400 border-rose-400/30"
-                )}>
+                <span
+                  className={cn(
+                    'px-1.5 py-0.5 text-[10px] font-black font-mono rounded border shrink-0',
+                    resp.statusCode < 300
+                      ? 'text-emerald-400 border-emerald-400/30'
+                      : resp.statusCode < 500
+                        ? 'text-amber-400 border-amber-400/30'
+                        : 'text-rose-400 border-rose-400/30',
+                  )}
+                >
                   {resp.statusCode}
                 </span>
                 <div className="flex-1 min-w-0">
@@ -90,7 +151,9 @@ export function MockEditor({ mock, specResponses, onChange }: MockEditorProps) {
                     {resp.name}
                   </p>
                   {resp.description && resp.description !== resp.name && (
-                    <p className="text-[9px] text-muted-foreground line-clamp-1 mt-0.5">{resp.description}</p>
+                    <p className="text-[9px] text-muted-foreground line-clamp-1 mt-0.5">
+                      {resp.description}
+                    </p>
                   )}
                 </div>
               </button>
@@ -111,18 +174,13 @@ export function MockEditor({ mock, specResponses, onChange }: MockEditorProps) {
               onClick={() => {
                 setStatusCode(code);
                 setSource('preset');
-                const headers: Record<string, string> = {};
-                for (const line of headersText.split('\n')) {
-                  const idx = line.indexOf(':');
-                  if (idx > 0) headers[line.slice(0, idx).trim()] = line.slice(idx + 1).trim();
-                }
-                onChange({ statusCode: code, headers, body });
+                commit(headerRows, code, body);
               }}
               className={cn(
-                "px-2.5 py-1.5 text-xs font-mono font-bold rounded-lg border transition-colors duration-75",
+                'px-2.5 py-1.5 text-xs font-mono font-bold rounded-lg border transition-colors duration-75',
                 source === 'preset' && statusCode === code
-                  ? "bg-mode-mock/20 border-mode-mock text-mode-mock shadow-sm"
-                  : "bg-muted border-border text-muted-foreground hover:border-mode-mock/40 hover:text-foreground"
+                  ? 'bg-mode-mock/20 border-mode-mock text-mode-mock shadow-sm'
+                  : 'bg-muted border-border text-muted-foreground hover:border-mode-mock/40 hover:text-foreground',
               )}
             >
               {code}
@@ -136,12 +194,12 @@ export function MockEditor({ mock, specResponses, onChange }: MockEditorProps) {
               setSource('manual');
             }}
             onFocus={() => setSource('manual')}
-            onBlur={commit}
+            onBlur={() => commit(headerRows, statusCode, body)}
             className={cn(
-              "w-16 px-2.5 py-1.5 text-xs font-mono font-bold bg-background border rounded-lg focus:ring-1 focus:ring-mode-mock focus:border-mode-mock outline-none transition-colors duration-75",
+              'w-16 px-2.5 py-1.5 text-xs font-mono font-bold bg-background border rounded-lg focus:ring-1 focus:ring-mode-mock focus:border-mode-mock outline-none transition-colors duration-75',
               source === 'manual'
-                ? "bg-mode-mock/20 border-mode-mock text-mode-mock shadow-sm" 
-                : "border-border text-muted-foreground hover:border-mode-mock/20"
+                ? 'bg-mode-mock/20 border-mode-mock text-mode-mock shadow-sm'
+                : 'border-border text-muted-foreground hover:border-mode-mock/20',
             )}
           />
         </div>
@@ -149,18 +207,103 @@ export function MockEditor({ mock, specResponses, onChange }: MockEditorProps) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-3">
-          <label className="flex items-center gap-2 text-[10px] font-black text-muted-foreground uppercase tracking-widest px-1">
-            <Layers className="w-3.5 h-3.5" />
-            Headers
-          </label>
-          <textarea
-            value={headersText}
-            onChange={(e) => setHeadersText(e.target.value)}
-            onBlur={commit}
-            rows={6}
-            className="w-full text-[11px] font-mono rounded-xl border border-border bg-background px-4 py-3 focus:outline-none focus:ring-1 focus:ring-mode-mock resize-none shadow-inner leading-relaxed"
-            placeholder="content-type: application/json"
-          />
+          <div className="flex items-center justify-between px-1">
+            <label className="flex items-center gap-2 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+              <Layers className="w-3.5 h-3.5" />
+              Headers
+            </label>
+            <button
+              onClick={addRow}
+              className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-primary hover:text-primary/80 transition-colors"
+              aria-label="Add header"
+            >
+              <Plus className="w-3 h-3" />
+              Add
+            </button>
+          </div>
+
+          <div className="flex flex-wrap gap-1.5">
+            {QUICK_ADD_HEADERS.map((h) => (
+              <button
+                key={`${h.key}:${h.value}`}
+                onClick={() => quickAddHeader(h.key, h.value)}
+                className="px-2 py-1 text-[9px] font-black uppercase tracking-wider rounded-md border border-border bg-muted text-muted-foreground hover:border-mode-mock/40 hover:text-foreground hover:bg-accent transition-all"
+              >
+                {h.label}
+              </button>
+            ))}
+          </div>
+
+          <datalist id="header-names">
+            {COMMON_HEADER_NAMES.map((name) => (
+              <option key={name} value={name} />
+            ))}
+          </datalist>
+
+          <div className="space-y-1.5">
+            {headerRows.length === 0 && (
+              <p className="text-[10px] text-muted-foreground/50 font-mono px-1 py-2">
+                No headers — use quick-add or + Add
+              </p>
+            )}
+            {headerRows.map((row, i) => (
+              <div key={i} className="space-y-1">
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    list="header-names"
+                    value={row.key}
+                    onChange={(e) => updateRow(i, 'key', e.target.value)}
+                    onBlur={() => commit(headerRows, statusCode, body)}
+                    placeholder="Header-Name"
+                    aria-label="Header name"
+                    className="w-[45%] px-2.5 py-1.5 text-[11px] font-mono font-bold rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-mode-mock shadow-inner"
+                  />
+                  <span className="text-muted-foreground/40 text-xs font-mono shrink-0">:</span>
+                  <input
+                    type="text"
+                    value={row.value}
+                    onChange={(e) => updateRow(i, 'value', e.target.value)}
+                    onBlur={() => commit(headerRows, statusCode, body)}
+                    placeholder="value"
+                    aria-label="Header value"
+                    className="flex-1 px-2.5 py-1.5 text-[11px] font-mono rounded-lg border border-border bg-background focus:outline-none focus:ring-1 focus:ring-mode-mock shadow-inner"
+                  />
+                  <button
+                    onClick={() => removeRow(i)}
+                    className="p-1 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 rounded transition-all shrink-0"
+                    aria-label="Remove header"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+                {row.key.toLowerCase() === 'content-type' && (
+                  <div className="flex flex-wrap gap-1 pl-1">
+                    {CONTENT_TYPE_PRESETS.map((ct) => (
+                      <button
+                        key={ct}
+                        onClick={() => {
+                          updateRow(i, 'value', ct);
+                          const next = headerRows.map((r, j) =>
+                            j === i ? { ...r, value: ct } : r,
+                          );
+                          commit(next, statusCode, body);
+                        }}
+                        className={cn(
+                          'px-1.5 py-0.5 text-[9px] font-mono rounded border transition-all',
+                          row.value === ct
+                            ? 'border-mode-mock/50 text-mode-mock bg-mode-mock/10'
+                            : 'border-border text-muted-foreground/60 hover:border-mode-mock/30 hover:text-muted-foreground',
+                        )}
+                      >
+                        {ct}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="space-y-3">
@@ -172,12 +315,12 @@ export function MockEditor({ mock, specResponses, onChange }: MockEditorProps) {
             <CodeMirror
               value={body}
               onChange={setBody}
-              onBlur={commit}
+              onBlur={() => commit(headerRows, statusCode, body)}
               extensions={[json()]}
               height="150px"
               theme="dark"
-              basicSetup={{ 
-                lineNumbers: true, 
+              basicSetup={{
+                lineNumbers: true,
                 foldGutter: true,
                 highlightActiveLine: true,
               }}

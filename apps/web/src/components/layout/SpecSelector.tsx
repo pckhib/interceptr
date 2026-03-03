@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import yaml from 'js-yaml';
 import { useSpecs, useToggleSpec, useDeleteSpec, useUploadSpec, useUploadSpecFromUrl, useUpdateSpec, useReimportSpec } from '@/hooks/use-specs';
 import { Braces, ChevronDown, Trash2, Plus, Upload, FileJson, Link, Globe, Loader2, X, Check, RefreshCw, Settings2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -40,10 +41,12 @@ export function SpecSelector() {
     if (!specName.trim()) return alert('Enter a spec name');
     try {
       const text = await file.text();
-      uploadSpec.mutate({ spec: JSON.parse(text), name: specName.trim() }, {
+      const isYaml = /\.ya?ml$/i.test(file.name);
+      const spec = isYaml ? yaml.load(text) : JSON.parse(text);
+      uploadSpec.mutate({ spec: spec as object, name: specName.trim() }, {
         onSuccess: () => { setSpecName(''); setShowImport(false); setOpen(false); }
       });
-    } catch { alert('Invalid JSON'); }
+    } catch { alert('Invalid file'); }
   }, [uploadSpec, specName]);
 
   const handleUrlImport = () => {
@@ -66,7 +69,9 @@ export function SpecSelector() {
         if (file) {
           try {
             const text = await file.text();
-            reimportSpec.mutate({ specId: spec.id, spec: JSON.parse(text) });
+            const isYaml = /\.ya?ml$/i.test(file.name);
+            const parsed = isYaml ? yaml.load(text) : JSON.parse(text);
+            reimportSpec.mutate({ specId: spec.id, spec: parsed as object });
           } catch { alert('Invalid file'); }
         }
       };

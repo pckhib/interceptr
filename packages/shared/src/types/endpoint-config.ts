@@ -1,4 +1,4 @@
-export type ProxyMode = 'passthrough' | 'delay' | 'mock';
+export type ProxyMode = 'passthrough' | 'delay' | 'mock' | 'mock-delay';
 
 export interface DelayConfig {
   ms: number;

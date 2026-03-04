@@ -18,29 +18,44 @@ const MODE_BORDERS: Record<ProxyMode, string> = {
   passthrough: 'border-mode-passthrough/20',
   delay: 'border-mode-delay/20',
   mock: 'border-mode-mock/20',
+  'mock-delay': 'border-mode-mock/20',
 };
 
 const MODE_INDICATORS: Record<ProxyMode, string> = {
   passthrough: 'bg-mode-passthrough',
   delay: 'bg-mode-delay',
   mock: 'bg-mode-mock',
+  'mock-delay': 'bg-mode-mock',
 };
 
 export function EndpointCard({ endpoint, specName, showSpecBadge }: EndpointCardProps) {
   const [expanded, setExpanded] = useState(false);
   const updateEndpoint = useUpdateEndpoint();
 
-  const handleModeChange = (mode: ProxyMode) => {
-    const update: Partial<EndpointConfig> = { mode };
-    if (mode === 'delay' && !endpoint.delay) {
+  const handleModeChange = (clicked: ProxyMode) => {
+    const hasDelay = endpoint.mode === 'delay' || endpoint.mode === 'mock-delay';
+    const hasMock = endpoint.mode === 'mock' || endpoint.mode === 'mock-delay';
+
+    let newMode: ProxyMode;
+    if (clicked === 'passthrough') {
+      newMode = 'passthrough';
+    } else if (clicked === 'delay') {
+      if (!hasDelay) newMode = hasMock ? 'mock-delay' : 'delay';
+      else newMode = hasMock ? 'mock' : 'passthrough';
+    } else {
+      if (!hasMock) newMode = hasDelay ? 'mock-delay' : 'mock';
+      else newMode = hasDelay ? 'delay' : 'passthrough';
+    }
+
+    const update: Partial<EndpointConfig> = { mode: newMode };
+    if ((newMode === 'delay' || newMode === 'mock-delay') && !endpoint.delay) {
       update.delay = { ms: 1000 };
     }
-    if (mode === 'mock' && !endpoint.mock) {
+    if ((newMode === 'mock' || newMode === 'mock-delay') && !endpoint.mock) {
       update.mock = { statusCode: 200, headers: { 'content-type': 'application/json' }, body: '{}' };
     }
     updateEndpoint.mutate({ id: endpoint.id, config: update });
-    // Auto-expand when switching to a mode that needs config
-    if (mode !== 'passthrough') setExpanded(true);
+    if (newMode !== 'passthrough') setExpanded(true);
   };
 
   return (
@@ -87,16 +102,16 @@ export function EndpointCard({ endpoint, specName, showSpecBadge }: EndpointCard
 
         <div className="flex items-center gap-4 shrink-0" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center gap-2">
-            {endpoint.mode === 'delay' && endpoint.delay && (
+            {(endpoint.mode === 'delay' || endpoint.mode === 'mock-delay') && endpoint.delay && (
               <span className="px-2 py-0.5 text-[10px] font-black font-mono rounded bg-mode-delay/10 text-mode-delay border border-mode-delay/20 shadow-sm">
                 {endpoint.delay.ms}ms
               </span>
             )}
-            {endpoint.mode === 'mock' && endpoint.mock && (
+            {(endpoint.mode === 'mock' || endpoint.mode === 'mock-delay') && endpoint.mock && (
               <span className={cn(
                 "px-2 py-0.5 text-[10px] font-black font-mono rounded border shadow-sm",
-                endpoint.mock.statusCode < 300 ? "bg-emerald-400/10 text-emerald-400 border-emerald-400/20" : 
-                endpoint.mock.statusCode < 500 ? "bg-amber-400/10 text-amber-400 border-amber-400/20" : 
+                endpoint.mock.statusCode < 300 ? "bg-emerald-400/10 text-emerald-400 border-emerald-400/20" :
+                endpoint.mock.statusCode < 500 ? "bg-amber-400/10 text-amber-400 border-amber-400/20" :
                 "bg-rose-400/10 text-rose-400 border-rose-400/20"
               )}>
                 {endpoint.mock.statusCode}
@@ -113,11 +128,11 @@ export function EndpointCard({ endpoint, specName, showSpecBadge }: EndpointCard
           'border-t border-border/20 mx-4'
         )}>
           <div className="pt-5 space-y-4">
-            {endpoint.mode === 'delay' && (
+            {(endpoint.mode === 'delay' || endpoint.mode === 'mock-delay') && (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-[10px] font-bold text-mode-delay uppercase tracking-widest px-1">
                   <Hash className="w-3 h-3" />
-                  Configuration
+                  Delay
                 </div>
                 <div className="bg-muted rounded-xl p-4 border border-border">
                   <DelayEditor
@@ -127,7 +142,7 @@ export function EndpointCard({ endpoint, specName, showSpecBadge }: EndpointCard
                 </div>
               </div>
             )}
-            {endpoint.mode === 'mock' && (
+            {(endpoint.mode === 'mock' || endpoint.mode === 'mock-delay') && (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-[10px] font-bold text-mode-mock uppercase tracking-widest px-1">
                   <Hash className="w-3 h-3" />

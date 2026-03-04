@@ -102,6 +102,7 @@ export function ActivityFeed({ isCompact }: ActivityFeedProps) {
                 <option value="passthrough">Pass</option>
                 <option value="delay">Delay</option>
                 <option value="mock">Mock</option>
+                <option value="mock-delay">Mock + Delay</option>
               </select>
             </div>
          </div>
@@ -173,12 +174,23 @@ export function ActivityFeed({ isCompact }: ActivityFeedProps) {
                      <span className="text-xs font-mono font-bold truncate text-foreground/90 group-hover:text-primary transition-colors duration-75 flex-1">
                        {entry.path}
                      </span>
-                     <span className={cn(
-                        'text-[8px] font-black uppercase tracking-[0.1em] px-1.5 py-0.5 rounded border leading-none',
-                        MODE_COLORS[entry.mode]
-                      )}>
-                        {entry.mode}
-                      </span>
+                     {entry.mode === 'mock-delay' ? (
+                        <div className="flex items-center gap-1">
+                          <span className="text-[8px] font-black uppercase tracking-[0.1em] px-1.5 py-0.5 rounded border leading-none bg-mode-delay/20 text-mode-delay border-mode-delay/20">
+                            delay
+                          </span>
+                          <span className="text-[8px] font-black uppercase tracking-[0.1em] px-1.5 py-0.5 rounded border leading-none bg-mode-mock/20 text-mode-mock border-mode-mock/20">
+                            mock
+                          </span>
+                        </div>
+                      ) : (
+                        <span className={cn(
+                          'text-[8px] font-black uppercase tracking-[0.1em] px-1.5 py-0.5 rounded border leading-none',
+                          MODE_COLORS[entry.mode]
+                        )}>
+                          {entry.mode}
+                        </span>
+                      )}
                   </div>
                 </button>
               ))

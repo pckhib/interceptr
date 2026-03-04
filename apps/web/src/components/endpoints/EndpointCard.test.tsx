@@ -119,7 +119,6 @@ describe('EndpointCard', () => {
     render(<EndpointCard endpoint={endpoint} />);
 
     await user.click(screen.getByText('/api/users'));
-    expect(screen.getByText('Configuration')).toBeInTheDocument();
     expect(screen.getByText('Base Delay')).toBeInTheDocument();
   });
 

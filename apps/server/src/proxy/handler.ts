@@ -72,7 +72,10 @@ export async function handleProxyRequest(req: Request): Promise<Response> {
   let response: Response;
 
   try {
-    if (mode === 'mock' && endpoint?.mock) {
+    if ((mode === 'mock' || mode === 'mock-delay') && endpoint?.mock) {
+      if (mode === 'mock-delay' && endpoint.delay) {
+        await sleep(getDelay(endpoint));
+      }
       // Global headers are the base; per-endpoint mock headers take priority
       const headers = new Headers();
       for (const [k, v] of Object.entries(globalHeaders)) headers.set(k, v);

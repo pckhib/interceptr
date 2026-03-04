@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  Import your OpenAPI / Swagger spec, control each endpoint individually (pass, delay, or mock), and watch live traffic in real time. No code changes. No config files. Just run it and point your app at the proxy.
+  Import your OpenAPI / Swagger spec, control each endpoint individually (pass, delay, mock, or both), and watch live traffic in real time. No code changes. No config files. Just run it and point your app at the proxy.
 </p>
 
 ---
@@ -57,12 +57,12 @@ Interceptr runs as a **local reverse proxy** that sits between your frontend (or
 ## Features
 
 - **OpenAPI / Swagger Import** — Load specs from a URL or file upload. Supports OpenAPI 3.0 and 3.1, JSON and YAML. Mock responses are auto-populated from spec examples.
-- **Per-Endpoint Proxy Modes** — Choose **Pass** (forward to upstream), **Delay** (inject latency + jitter), or **Mock** (serve custom response) for each endpoint individually.
+- **Per-Endpoint Proxy Modes** — Choose **Pass** (forward to upstream), **Delay** (inject latency + jitter), **Mock** (serve custom response), or **Delay + Mock** (mock response with simulated latency) for each endpoint individually. Delay and Mock can be combined by activating both buttons simultaneously.
 - **Group Actions** — Apply a mode to all endpoints in a tag group at once.
 - **Live Traffic Monitor** — Watch request/response cycles in real time. Filter by method, status code, or proxy mode. Click any entry to inspect headers and JSON body.
 - **Presets** — Save and restore full endpoint configurations. Built-in actions: Pass All, Slow All, Error All.
 - **Multi-Project & Multi-Spec** — Organize work into projects. Toggle multiple specs (e.g., local + staging) simultaneously.
-- **Global Response Headers** — Inject headers (e.g., CORS) across all responses for a spec, overridable per endpoint.
+- **Global Response Headers** — Inject headers (e.g., CORS) across all responses for a spec, overridable per endpoint. Optionally extend injection to all proxied requests — including those not in the endpoint registry — via the "Apply to all requests" toggle.
 - **Conditional Rules** — Define per-request overrides based on request count, random failure rate, or header matching.
 - **No Config Files** — Everything is managed from the web UI and persisted automatically as JSON.
 - **Theme Support** — Dark mode (Midnight Blue) and high-contrast light mode.
@@ -84,6 +84,7 @@ The **Endpoints Registry** lists every operation from your spec, grouped by tag.
 | **Pass** | Forwards the request to the upstream server unchanged. |
 | **Delay** | Simulates latency. Configure milliseconds and optional jitter. |
 | **Mock** | Returns a custom response. Use spec-defined examples or write your own JSON. |
+| **Delay + Mock** | Returns a mock response after the configured delay. Activate by clicking both the Delay and Mock buttons simultaneously. |
 
 Click an endpoint to open the editor. Use **group action buttons** (Pass / Delay / Mock) above each tag group to apply a mode to all endpoints at once.
 
@@ -155,7 +156,7 @@ The management API runs on port 3001. All endpoints are prefixed with `/api`.
 | `POST` | `/specs` | Upload a spec (body: `{spec, name, upstreamUrl?}`) |
 | `POST` | `/specs/url` | Import a spec from URL (body: `{url, name}`) |
 | `POST` | `/specs/:id/reimport` | Reimport from source URL or new body |
-| `PUT` | `/specs/:id` | Update spec metadata (body: `{name?, upstreamUrl?, active?, globalHeaders?}`) |
+| `PUT` | `/specs/:id` | Update spec metadata (body: `{name?, upstreamUrl?, active?, globalHeaders?, applyGlobalHeadersToAll?}`) |
 | `PUT` | `/specs/:id/toggle` | Toggle spec active state |
 | `DELETE` | `/specs/:id` | Delete a spec |
 

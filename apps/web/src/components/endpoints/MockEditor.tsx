@@ -226,7 +226,8 @@ export function MockEditor({ mock, specResponses, onChange }: MockEditorProps) {
               >
                 <button
                   onClick={() => selectSpecResponse(resp, i)}
-                  className="flex flex-1 items-start gap-3 p-3 text-left"
+                  title={resp.name}
+                  className="flex flex-1 min-w-0 items-start gap-3 p-3 text-left"
                 >
                   <span
                     className={cn(

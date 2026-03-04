@@ -9,6 +9,26 @@ describe('generateTestData', () => {
     expect(generateTestData(undefined)).toBeNull();
   });
 
+  it('returns const value exactly as-is', () => {
+    expect(generateTestData({ const: 'InvalidBUError', type: 'string' })).toBe('InvalidBUError');
+    expect(generateTestData({ const: 0 })).toBe(0);
+    expect(generateTestData({ const: false })).toBe(false);
+    expect(generateTestData({ const: null })).toBeNull();
+  });
+
+  it('preserves const on a property whose key would match a heuristic', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        type: { type: 'string', const: 'ConflictingBUError' },
+        status: { type: 'string', const: 'active_override' },
+      },
+    };
+    const result = generateTestData(schema);
+    expect(result.type).toBe('ConflictingBUError');
+    expect(result.status).toBe('active_override');
+  });
+
   it('returns example value if present', () => {
     expect(generateTestData({ example: 'hello' })).toBe('hello');
     expect(generateTestData({ example: 0 })).toBe(0);

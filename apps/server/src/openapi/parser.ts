@@ -118,6 +118,7 @@ function safeClone(value: any): object | undefined {
 }
 
 function generateExampleFromSchema(schema: any): any {
+  if (schema.const !== undefined) return schema.const;
   if (schema.example) return schema.example;
   if (schema.default !== undefined) return schema.default;
 

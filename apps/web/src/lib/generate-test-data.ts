@@ -79,6 +79,7 @@ function heuristic(key: string, schema: any): any {
 export function generateTestData(schema: any): any {
   if (!schema) return null;
 
+  if (schema.const !== undefined) return schema.const;
   if (schema.example !== undefined) return schema.example;
   if (schema.default !== undefined) return schema.default;
   if (schema.enum?.length) return pick(schema.enum);
@@ -100,8 +101,12 @@ export function generateTestData(schema: any): any {
   if (schema.type === 'object' || schema.properties) {
     const obj: any = {};
     for (const [key, prop] of Object.entries(schema.properties ?? {})) {
-      const h = heuristic(key, prop);
-      obj[key] = h !== undefined ? h : generateTestData(prop as any);
+      if ((prop as any).const !== undefined) {
+        obj[key] = (prop as any).const;
+      } else {
+        const h = heuristic(key, prop);
+        obj[key] = h !== undefined ? h : generateTestData(prop as any);
+      }
     }
     return obj;
   }

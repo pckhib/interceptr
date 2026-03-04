@@ -346,6 +346,39 @@ describe('parseOpenAPISpec', () => {
     expect(new Date(body.createdAt).getFullYear()).toBeGreaterThan(2000);
   });
 
+  it('uses const value and does not replace it with a generated value', async () => {
+    const spec = {
+      openapi: '3.0.0',
+      info: { title: 'T', version: '1' },
+      paths: {
+        '/items': {
+          get: {
+            responses: {
+              '422': {
+                description: 'Error',
+                content: {
+                  'application/json': {
+                    schema: {
+                      type: 'object',
+                      properties: {
+                        error_code: { type: 'string', const: 'InvalidBUError' },
+                        count: { type: 'integer' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+    const { endpoints } = await parseOpenAPISpec(spec);
+    const body = JSON.parse(endpoints[0].responses![0].body!);
+    expect(body.error_code).toBe('InvalidBUError');
+    expect(body.count).toBe(0);
+  });
+
   it('returns schema.example when present', async () => {
     const spec = {
       openapi: '3.0.0',

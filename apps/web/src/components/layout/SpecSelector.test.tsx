@@ -225,4 +225,68 @@ describe('SpecSelector', () => {
     await user.click(screen.getByText('Reimport'));
     expect(mockReimportMutate).toHaveBeenCalledWith({ specId: 'spec-1' });
   });
+
+  it('handles reimport for spec without sourceUrl (triggers file picker)', async () => {
+    // baseSpec has no sourceUrl — should not call reimportSpec.mutate
+    const user = userEvent.setup();
+    render(<SpecSelector />);
+
+    await user.click(screen.getByText('Petstore'));
+    await user.click(screen.getByTitle('Configure'));
+    await user.click(screen.getByText('Reimport'));
+    expect(mockReimportMutate).not.toHaveBeenCalled();
+  });
+
+  it('closes dropdown when clicking outside', async () => {
+    const user = userEvent.setup();
+    render(<SpecSelector />);
+
+    await user.click(screen.getByText('Petstore'));
+    expect(screen.getByText('API Specifications')).toBeInTheDocument();
+
+    await user.click(document.body);
+    expect(screen.queryByText('API Specifications')).not.toBeInTheDocument();
+  });
+
+  it('closes import form when X button is clicked', async () => {
+    const user = userEvent.setup();
+    render(<SpecSelector />);
+
+    await user.click(screen.getByText('Petstore'));
+    const buttons = screen.getAllByRole('button');
+    const plusButton = buttons.find(btn => btn.querySelector('.lucide-plus'));
+    await user.click(plusButton!);
+
+    expect(screen.getByText('Spec Identifier')).toBeInTheDocument();
+    // Click X to close the import form
+    const xButton = screen.getAllByRole('button').find(btn => btn.querySelector('.lucide-x'));
+    await user.click(xButton!);
+    expect(screen.queryByText('Spec Identifier')).not.toBeInTheDocument();
+  });
+
+  it('does not import from URL when fields are empty', async () => {
+    const user = userEvent.setup();
+    render(<SpecSelector />);
+
+    await user.click(screen.getByText('Petstore'));
+    const buttons = screen.getAllByRole('button');
+    const plusButton = buttons.find(btn => btn.querySelector('.lucide-plus'));
+    await user.click(plusButton!);
+
+    // Import button should be disabled without name/url
+    const importBtn = screen.getByText('Import from URL').closest('button');
+    expect(importBtn).toBeDisabled();
+  });
+
+  it('toggles settings panel off when clicked again', async () => {
+    const user = userEvent.setup();
+    render(<SpecSelector />);
+
+    await user.click(screen.getByText('Petstore'));
+    await user.click(screen.getByTitle('Configure'));
+    expect(screen.getByText('Upstream URL')).toBeInTheDocument();
+    // Click configure again to close
+    await user.click(screen.getByTitle('Configure'));
+    expect(screen.queryByText('Upstream URL')).not.toBeInTheDocument();
+  });
 });

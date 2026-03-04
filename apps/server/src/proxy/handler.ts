@@ -137,7 +137,8 @@ export async function handleProxyRequest(req: Request): Promise<Response> {
     endpointId: endpoint?.id,
     requestHeaders: Object.fromEntries(req.headers.entries()),
     responseHeaders: Object.fromEntries(response.headers.entries()),
-    responseBody: responseBody.slice(0, 10000),
+    responseBody: responseBody.slice(0, 100_000),
+    responseBodyTruncated: responseBody.length > 100_000,
   };
 
   logBuffer.push(logEntry);

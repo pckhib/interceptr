@@ -37,6 +37,15 @@ export interface Preset {
   createdAt: string;
 }
 
+export interface SavedResponse {
+  id: string;
+  name: string;
+  statusCode: number;
+  headers: Record<string, string>;
+  body: string;
+  createdAt: string;
+}
+
 export interface ApiResponse<T> {
   data: T;
 }

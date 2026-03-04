@@ -7,6 +7,7 @@ import type {
   Preset,
   Project,
   ProjectSpec,
+  SavedResponse,
 } from '@interceptr/shared';
 
 const GLOBAL_PATH = 'data/global.json';
@@ -24,6 +25,7 @@ interface ProjectData {
   specs: ProjectSpec[];
   endpoints: EndpointConfig[];
   presets: Preset[];
+  savedResponses: SavedResponse[];
 }
 
 const DEFAULT_CONFIG: GlobalConfig = {
@@ -40,6 +42,7 @@ export class ConfigStore {
   private specs = new Map<string, ProjectSpec>();
   private endpoints = new Map<string, EndpointConfig>();
   private presets = new Map<string, Preset>();
+  private savedResponses = new Map<string, SavedResponse>();
 
   private globalSaveTimer: ReturnType<typeof setTimeout> | null = null;
   private projectSaveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -153,6 +156,7 @@ export class ConfigStore {
     this.specs.clear();
     this.endpoints.clear();
     this.presets.clear();
+    this.savedResponses.clear();
 
     try {
       const raw = await readFile(join(PROJECTS_DIR, `${projectId}.json`), 'utf-8');
@@ -160,6 +164,7 @@ export class ConfigStore {
       for (const s of data.specs ?? []) this.specs.set(s.id, s);
       for (const ep of data.endpoints ?? []) this.endpoints.set(ep.id, ep);
       for (const p of data.presets ?? []) this.presets.set(p.name, p);
+      for (const r of data.savedResponses ?? []) this.savedResponses.set(r.id, r);
     } catch {
       // Project data file doesn't exist yet
     }
@@ -195,6 +200,7 @@ export class ConfigStore {
       specs: Array.from(this.specs.values()),
       endpoints: Array.from(this.endpoints.values()),
       presets: Array.from(this.presets.values()),
+      savedResponses: Array.from(this.savedResponses.values()),
     };
     try {
       await mkdir(PROJECTS_DIR, { recursive: true });
@@ -477,6 +483,32 @@ export class ConfigStore {
     const preset = this.presets.get(name);
     if (!preset) return [];
     return this.bulkUpdateEndpoints(preset.endpoints);
+  }
+
+  // ── Saved Responses ──
+
+  getSavedResponses(): SavedResponse[] {
+    return Array.from(this.savedResponses.values());
+  }
+
+  addSavedResponse(response: SavedResponse): void {
+    this.savedResponses.set(response.id, response);
+    this.scheduleProjectSave();
+  }
+
+  updateSavedResponse(id: string, data: Omit<SavedResponse, 'id' | 'createdAt'>): SavedResponse | null {
+    const existing = this.savedResponses.get(id);
+    if (!existing) return null;
+    const updated: SavedResponse = { ...existing, ...data };
+    this.savedResponses.set(id, updated);
+    this.scheduleProjectSave();
+    return updated;
+  }
+
+  deleteSavedResponse(id: string): boolean {
+    const deleted = this.savedResponses.delete(id);
+    if (deleted) this.scheduleProjectSave();
+    return deleted;
   }
 
   // ── Export / Import ──

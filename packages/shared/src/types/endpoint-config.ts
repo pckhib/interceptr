@@ -39,6 +39,7 @@ export interface SpecResponse {
   description?: string;
   headers?: Record<string, string>;
   body?: string;
+  schema?: object;
 }
 
 export interface EndpointConfig {

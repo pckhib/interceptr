@@ -13,4 +13,5 @@ export interface ProxyLogEntry {
   requestBody?: string;
   responseHeaders?: Record<string, string>;
   responseBody?: string;
+  responseBodyTruncated?: boolean;
 }

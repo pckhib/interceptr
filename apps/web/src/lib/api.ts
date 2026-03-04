@@ -6,6 +6,7 @@ import type {
   Project,
   ProjectSpec,
   ProxyLogEntry,
+  SavedResponse,
 } from '@interceptr/shared';
 
 const BASE_URL = '/api';
@@ -94,6 +95,15 @@ export const api = {
     status: () => request<{ running: boolean; port: number | null }>('/proxy/status'),
     start: () => request<{ running: boolean; port: number }>('/proxy/start', { method: 'POST' }),
     stop: () => request<{ running: boolean; port: number | null }>('/proxy/stop', { method: 'POST' }),
+  },
+  savedResponses: {
+    list: () => request<SavedResponse[]>('/saved-responses'),
+    create: (response: Omit<SavedResponse, 'id' | 'createdAt'>) =>
+      request<SavedResponse>('/saved-responses', { method: 'POST', body: JSON.stringify(response) }),
+    update: (id: string, response: Omit<SavedResponse, 'id' | 'createdAt'>) =>
+      request<SavedResponse>(`/saved-responses/${id}`, { method: 'PUT', body: JSON.stringify(response) }),
+    delete: (id: string) =>
+      request<{ message: string }>(`/saved-responses/${id}`, { method: 'DELETE' }),
   },
   presets: {
     list: () => request<Preset[]>('/presets'),

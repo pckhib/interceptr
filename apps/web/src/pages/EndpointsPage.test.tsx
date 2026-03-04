@@ -1,4 +1,4 @@
-import { render, screen } from '@/test/test-utils';
+import { render, screen, userEvent } from '@/test/test-utils';
 import { EndpointsPage } from './EndpointsPage';
 
 // Mock child components to isolate page-level rendering
@@ -14,6 +14,11 @@ vi.mock('@/components/logs/ActivityFeed', () => ({
   ActivityFeed: ({ isCompact }: { isCompact?: boolean }) => (
     <div data-testid="activity-feed" data-compact={isCompact}>ActivityFeed</div>
   ),
+}));
+
+vi.mock('@/hooks/use-specs', () => ({
+  useSpecs: () => ({ data: [] }),
+  useUpdateSpec: () => ({ mutate: vi.fn() }),
 }));
 
 describe('EndpointsPage', () => {
@@ -42,5 +47,23 @@ describe('EndpointsPage', () => {
     const feed = screen.getByTestId('activity-feed');
     expect(feed).toBeInTheDocument();
     expect(feed).toHaveAttribute('data-compact', 'true');
+  });
+
+  it('opens GlobalHeadersPanel when trigger button is clicked', async () => {
+    const user = userEvent.setup();
+    render(<EndpointsPage />);
+    const trigger = screen.getByTitle('Global Response Headers');
+    await user.click(trigger);
+    expect(screen.getByText('No active spec selected.')).toBeInTheDocument();
+  });
+
+  it('closes GlobalHeadersPanel when trigger button is clicked again', async () => {
+    const user = userEvent.setup();
+    render(<EndpointsPage />);
+    const trigger = screen.getByTitle('Global Response Headers');
+    await user.click(trigger);
+    expect(screen.getByText('No active spec selected.')).toBeInTheDocument();
+    await user.click(trigger);
+    expect(screen.queryByText('No active spec selected.')).not.toBeInTheDocument();
   });
 });

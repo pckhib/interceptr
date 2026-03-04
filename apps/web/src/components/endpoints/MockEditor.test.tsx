@@ -13,6 +13,18 @@ vi.mock('@codemirror/lang-json', () => ({
   json: () => [],
 }));
 
+const mockCreateMutate = vi.fn();
+const mockUpdateMutate = vi.fn();
+const mockDeleteMutate = vi.fn();
+let mockSavedResponsesData: unknown[] = [];
+
+vi.mock('@/hooks/use-saved-responses', () => ({
+  useSavedResponses: () => ({ data: mockSavedResponsesData }),
+  useCreateSavedResponse: () => ({ mutate: mockCreateMutate, isPending: false }),
+  useUpdateSavedResponse: () => ({ mutate: mockUpdateMutate, isPending: false }),
+  useDeleteSavedResponse: () => ({ mutate: mockDeleteMutate }),
+}));
+
 const baseMock = {
   statusCode: 200,
   headers: { 'content-type': 'application/json' },
@@ -140,12 +152,12 @@ describe('MockEditor', () => {
   it('quick-add chip updates existing header instead of duplicating', async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
-    render(<MockEditor mock={baseMock} onChange={onChange} />);
+    render(<MockEditor mock={{ statusCode: 200, headers: { 'content-type': 'text/plain' }, body: '' }} onChange={onChange} />);
 
-    // baseMock already has content-type: application/json; clicking Text should update it
-    await user.click(screen.getByRole('button', { name: 'Text' }));
+    // already has content-type: text/plain; clicking Content-Type should update it to application/json
+    await user.click(screen.getByRole('button', { name: 'Content-Type' }));
     expect(onChange).toHaveBeenCalledWith(
-      expect.objectContaining({ headers: { 'content-type': 'text/plain' } }),
+      expect.objectContaining({ headers: { 'content-type': 'application/json' } }),
     );
   });
 
@@ -171,6 +183,49 @@ describe('MockEditor', () => {
     expect(await screen.findByTestId('json-error')).toBeInTheDocument();
   });
 
+  it('shows generate button only for spec responses with a schema', () => {
+    const specResponses = [
+      { statusCode: 200, name: 'Success', schema: { type: 'object', properties: { id: { type: 'string' } } } },
+      { statusCode: 404, name: 'Not Found' },
+    ];
+    render(<MockEditor mock={baseMock} specResponses={specResponses} onChange={() => {}} />);
+    expect(screen.getByRole('button', { name: 'Generate test data' })).toBeInTheDocument();
+  });
+
+  it('clicking generate button calls onChange with generated body', async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    const specResponses = [
+      {
+        statusCode: 200,
+        name: 'Success',
+        schema: { type: 'object', properties: { id: { type: 'string', format: 'uuid' }, name: { type: 'string' } } },
+      },
+    ];
+    render(<MockEditor mock={baseMock} specResponses={specResponses} onChange={onChange} />);
+
+    await user.click(screen.getByRole('button', { name: 'Generate test data' }));
+    const call = onChange.mock.calls.at(-1)![0];
+    expect(call.statusCode).toBe(200);
+    const parsed = JSON.parse(call.body);
+    expect(parsed).toHaveProperty('id');
+    expect(parsed).toHaveProperty('name');
+  });
+
+  it('generate button applies status code and default content-type header', async () => {
+    const onChange = vi.fn();
+    const user = userEvent.setup();
+    const specResponses = [
+      { statusCode: 201, name: 'Created', schema: { type: 'object', properties: { ok: { type: 'boolean' } } } },
+    ];
+    render(<MockEditor mock={baseMock} specResponses={specResponses} onChange={onChange} />);
+
+    await user.click(screen.getByRole('button', { name: 'Generate test data' }));
+    const call = onChange.mock.calls.at(-1)![0];
+    expect(call.statusCode).toBe(201);
+    expect(call.headers).toMatchObject({ 'content-type': 'application/json' });
+  });
+
   it('commits on blur of body editor', async () => {
     const onChange = vi.fn();
     render(<MockEditor mock={baseMock} onChange={onChange} />);
@@ -181,5 +236,179 @@ describe('MockEditor', () => {
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({ body: '{"hello":"world"}' }),
     );
+  });
+
+  describe('saved responses', () => {
+    beforeEach(() => {
+      mockSavedResponsesData = [];
+      mockCreateMutate.mockReset();
+      mockUpdateMutate.mockReset();
+      mockDeleteMutate.mockReset();
+    });
+
+    it('shows empty state when no saved responses', () => {
+      render(<MockEditor mock={baseMock} onChange={() => {}} />);
+      expect(screen.getByText(/No saved responses yet/)).toBeInTheDocument();
+    });
+
+    it('shows save form when Save current is clicked', async () => {
+      const user = userEvent.setup();
+      render(<MockEditor mock={baseMock} onChange={() => {}} />);
+
+      await user.click(screen.getByRole('button', { name: /save current response/i }));
+      expect(screen.getByPlaceholderText('Name...')).toBeInTheDocument();
+    });
+
+    it('calls createSavedResponse.mutate with current mock data on save', async () => {
+      const user = userEvent.setup();
+      render(<MockEditor mock={baseMock} onChange={() => {}} />);
+
+      await user.click(screen.getByRole('button', { name: /save current response/i }));
+      await user.type(screen.getByPlaceholderText('Name...'), 'My Response');
+      await user.click(screen.getByRole('button', { name: /confirm save/i }));
+
+      expect(mockCreateMutate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'My Response',
+          statusCode: 200,
+          body: '{}',
+        }),
+        expect.anything(),
+      );
+    });
+
+    it('submits save form on Enter key', async () => {
+      const user = userEvent.setup();
+      render(<MockEditor mock={baseMock} onChange={() => {}} />);
+
+      await user.click(screen.getByRole('button', { name: /save current response/i }));
+      await user.type(screen.getByPlaceholderText('Name...'), 'Enter Response{Enter}');
+
+      expect(mockCreateMutate).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'Enter Response' }),
+        expect.anything(),
+      );
+    });
+
+    it('cancels save form on Escape key', async () => {
+      const user = userEvent.setup();
+      render(<MockEditor mock={baseMock} onChange={() => {}} />);
+
+      await user.click(screen.getByRole('button', { name: /save current response/i }));
+      const nameInput = screen.getByPlaceholderText('Name...');
+      await user.type(nameInput, 'Test{Escape}');
+
+      expect(screen.queryByPlaceholderText('Name...')).not.toBeInTheDocument();
+    });
+
+    it('renders saved response cards when data is available', () => {
+      mockSavedResponsesData = [
+        { id: 'sr-1', name: 'My Saved', statusCode: 201, headers: { 'content-type': 'application/json' }, body: '{"ok":true}', createdAt: '' },
+      ];
+      render(<MockEditor mock={baseMock} onChange={() => {}} />);
+      expect(screen.getByText('My Saved')).toBeInTheDocument();
+    });
+
+    it('applies saved response on card click', async () => {
+      const onChange = vi.fn();
+      const user = userEvent.setup();
+      mockSavedResponsesData = [
+        { id: 'sr-1', name: 'My Saved', statusCode: 201, headers: { 'content-type': 'application/json' }, body: '{"ok":true}', createdAt: '' },
+      ];
+      render(<MockEditor mock={baseMock} onChange={onChange} />);
+
+      await user.click(screen.getByText('My Saved'));
+      expect(onChange).toHaveBeenCalledWith({
+        statusCode: 201,
+        headers: { 'content-type': 'application/json' },
+        body: '{"ok":true}',
+      });
+    });
+
+    it('calls deleteSavedResponse.mutate with response id on delete', async () => {
+      const user = userEvent.setup();
+      mockSavedResponsesData = [
+        { id: 'sr-1', name: 'To Delete', statusCode: 200, headers: {}, body: '', createdAt: '' },
+      ];
+      render(<MockEditor mock={baseMock} onChange={() => {}} />);
+
+      await user.click(screen.getByRole('button', { name: /delete saved response/i }));
+      expect(mockDeleteMutate).toHaveBeenCalledWith('sr-1');
+    });
+
+    it('highlights the active saved response card after clicking it', async () => {
+      const user = userEvent.setup();
+      mockSavedResponsesData = [
+        { id: 'sr-1', name: 'My Saved', statusCode: 200, headers: {}, body: '', createdAt: '' },
+      ];
+      const { container } = render(<MockEditor mock={baseMock} onChange={() => {}} />);
+
+      await user.click(screen.getByText('My Saved'));
+      const card = container.querySelector('[class*="border-primary"]');
+      expect(card).toBeInTheDocument();
+    });
+
+    it('disables "Save current" when active saved response has no changes', async () => {
+      const user = userEvent.setup();
+      mockSavedResponsesData = [
+        { id: 'sr-1', name: 'Same', statusCode: 200, headers: { 'content-type': 'application/json' }, body: '{}', createdAt: '' },
+      ];
+      render(<MockEditor mock={baseMock} onChange={() => {}} />);
+
+      await user.click(screen.getByText('Same'));
+      expect(screen.getByRole('button', { name: /save current response/i })).toBeDisabled();
+    });
+
+    it('"Save current" calls updateSavedResponse when active saved response has changes', async () => {
+      const user = userEvent.setup();
+      mockSavedResponsesData = [
+        { id: 'sr-1', name: 'My Response', statusCode: 200, headers: {}, body: '{"old":true}', createdAt: '' },
+      ];
+      render(<MockEditor mock={baseMock} onChange={() => {}} />);
+
+      // Select the saved response
+      await user.click(screen.getByText('My Response'));
+      // Now body matches — button should be disabled. Change the body via the textarea
+      fireEvent.change(screen.getByTestId('codemirror'), { target: { value: '{"new":true}' } });
+      fireEvent.blur(screen.getByTestId('codemirror'));
+
+      await user.click(screen.getByRole('button', { name: /save current response/i }));
+
+      expect(mockUpdateMutate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'sr-1',
+          data: expect.objectContaining({ name: 'My Response', body: '{"new":true}' }),
+        }),
+      );
+    });
+
+    it('"Save current" opens the name form when no saved response is active', async () => {
+      render(<MockEditor mock={baseMock} onChange={() => {}} />);
+
+      await userEvent.setup().click(screen.getByRole('button', { name: /save current response/i }));
+      expect(screen.getByPlaceholderText('Name...')).toBeInTheDocument();
+    });
+  });
+
+  describe('active source — spec responses', () => {
+    it('highlights the active spec response card after clicking it', async () => {
+      const user = userEvent.setup();
+      const specResponses = [{ statusCode: 200, name: 'OK' }, { statusCode: 404, name: 'Not Found' }];
+      const { container } = render(<MockEditor mock={baseMock} specResponses={specResponses} onChange={() => {}} />);
+
+      await user.click(screen.getByText('OK'));
+      const card = container.querySelector('[class*="border-primary"]');
+      expect(card).toBeInTheDocument();
+    });
+
+    it('"Save current" still opens the name form when a spec response is active', async () => {
+      const user = userEvent.setup();
+      const specResponses = [{ statusCode: 200, name: 'OK' }];
+      render(<MockEditor mock={baseMock} specResponses={specResponses} onChange={() => {}} />);
+
+      await user.click(screen.getByText('OK'));
+      await user.click(screen.getByRole('button', { name: /save current response/i }));
+      expect(screen.getByPlaceholderText('Name...')).toBeInTheDocument();
+    });
   });
 });

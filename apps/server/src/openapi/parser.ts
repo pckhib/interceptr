@@ -31,6 +31,7 @@ export async function parseOpenAPISpec(
             if (isNaN(statusCode)) continue;
 
             let body = '';
+            let schema: object | undefined;
             const content = (response as any).content;
             if (content && content['application/json']) {
               const jsonContent = content['application/json'];
@@ -42,6 +43,9 @@ export async function parseOpenAPISpec(
               } else if (jsonContent.schema) {
                 body = JSON.stringify(generateExampleFromSchema(jsonContent.schema), null, 2);
               }
+              if (jsonContent.schema) {
+                schema = safeClone(jsonContent.schema);
+              }
             }
 
             responses.push({
@@ -49,7 +53,8 @@ export async function parseOpenAPISpec(
               name: (response as any).description || `Status ${statusCode}`,
               description: (response as any).description,
               body,
-              headers: {}, // Could extract headers too if needed
+              headers: {},
+              schema,
             });
           }
         }
@@ -76,6 +81,14 @@ export async function parseOpenAPISpec(
   };
 
   return { metadata, endpoints };
+}
+
+function safeClone(value: any): object | undefined {
+  try {
+    return JSON.parse(JSON.stringify(value));
+  } catch {
+    return undefined;
+  }
 }
 
 function generateExampleFromSchema(schema: any): any {

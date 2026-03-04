@@ -1,7 +1,7 @@
-import { render, screen } from '@/test/test-utils';
+import { render, screen, userEvent } from '@/test/test-utils';
 import { Layout } from './Layout';
 import { useTheme } from './use-theme';
-import { MemoryRouter } from 'react-router';
+import { createMemoryRouter, RouterProvider, MemoryRouter } from 'react-router';
 
 // Mock Header to avoid pulling in its deep dependency tree
 vi.mock('./Header', () => ({
@@ -19,9 +19,21 @@ function ThemeConsumer() {
   );
 }
 
+function renderWithLayout(children?: React.ReactNode) {
+  const router = createMemoryRouter([
+    {
+      path: '/',
+      element: <Layout />,
+      children: [{ path: '', element: children ?? null }],
+    },
+  ]);
+  return render(<RouterProvider router={router} />);
+}
+
 describe('Layout', () => {
   beforeEach(() => {
     localStorage.clear();
+    document.documentElement.classList.remove('light', 'dark');
   });
 
   it('renders the Header component', () => {
@@ -33,13 +45,40 @@ describe('Layout', () => {
     expect(screen.getByTestId('header')).toBeInTheDocument();
   });
 
-  it('provides theme context defaulting to dark', () => {
-    render(
-      <MemoryRouter>
-        <Layout />
-      </MemoryRouter>,
-    );
-    // useTheme is tested directly in the useTheme describe block below
+  it('applies dark theme class by default', () => {
+    renderWithLayout();
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
+  });
+
+  it('reads theme from localStorage on mount', () => {
+    localStorage.setItem('theme', 'light');
+    renderWithLayout();
+    expect(document.documentElement.classList.contains('light')).toBe(true);
+  });
+
+  it('toggles theme when toggleTheme is called', async () => {
+    const user = userEvent.setup();
+    renderWithLayout(<ThemeConsumer />);
+    expect(screen.getByTestId('theme')).toHaveTextContent('dark');
+    await user.click(screen.getByText('Toggle'));
+    expect(screen.getByTestId('theme')).toHaveTextContent('light');
+    expect(document.documentElement.classList.contains('light')).toBe(true);
+  });
+
+  it('toggles back to dark from light', async () => {
+    localStorage.setItem('theme', 'light');
+    const user = userEvent.setup();
+    renderWithLayout(<ThemeConsumer />);
+    expect(screen.getByTestId('theme')).toHaveTextContent('light');
+    await user.click(screen.getByText('Toggle'));
+    expect(screen.getByTestId('theme')).toHaveTextContent('dark');
+  });
+
+  it('persists theme to localStorage on toggle', async () => {
+    const user = userEvent.setup();
+    renderWithLayout(<ThemeConsumer />);
+    await user.click(screen.getByText('Toggle'));
+    expect(localStorage.getItem('theme')).toBe('light');
   });
 });
 

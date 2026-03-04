@@ -10,6 +10,7 @@ import endpoints from './routes/endpoints.js';
 import config from './routes/config.js';
 import logs from './routes/logs.js';
 import presets from './routes/presets.js';
+import savedResponses from './routes/saved-responses.js';
 import projects from './routes/projects.js';
 import proxy from './routes/proxy.js';
 
@@ -24,6 +25,7 @@ app.route('/api/endpoints', endpoints);
 app.route('/api/config', config);
 app.route('/api/logs', logs);
 app.route('/api/presets', presets);
+app.route('/api/saved-responses', savedResponses);
 app.route('/api/proxy', proxy);
 
 app.get('/api/health', (c) => c.json({ data: { status: 'ok', version } }));

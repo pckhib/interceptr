@@ -18,6 +18,7 @@ export type {
   Project,
   ProjectSpec,
   Preset,
+  SavedResponse,
   ApiResponse,
   ApiError,
   LogsResponse,

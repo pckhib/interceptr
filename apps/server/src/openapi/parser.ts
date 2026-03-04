@@ -50,7 +50,7 @@ export async function parseOpenAPISpec(
                 }
                 responses.push({
                   statusCode,
-                  name: variant.title ? `${description} — ${variant.title}` : `${description} (${i + 1})`,
+                  name: variant.title ?? `${description} (${i + 1})`,
                   description,
                   body,
                   headers: {},
@@ -73,9 +73,10 @@ export async function parseOpenAPISpec(
                   schema = safeClone(topSchema);
                 }
               }
+              const singleVariantTitle = variants?.[0]?.title;
               responses.push({
                 statusCode,
-                name: description,
+                name: singleVariantTitle ?? topSchema?.title ?? description,
                 description,
                 body,
                 headers: {},

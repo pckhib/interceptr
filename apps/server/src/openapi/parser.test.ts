@@ -113,11 +113,36 @@ describe('parseOpenAPISpec', () => {
     expect(statuses).toContain(404);
   });
 
-  it('uses response description as name', async () => {
+  it('uses response description as name when no schema title is present', async () => {
     const { endpoints } = await parseOpenAPISpec(minimalSpec);
     const getUser = endpoints.find((e) => e.path === '/users/{id}' && e.method === 'GET');
     const notFound = getUser!.responses!.find((r) => r.statusCode === 404);
     expect(notFound?.name).toBe('Not Found');
+  });
+
+  it('uses schema title as name when present on a single schema', async () => {
+    const spec = {
+      openapi: '3.0.0',
+      info: { title: 'T', version: '1' },
+      paths: {
+        '/items': {
+          get: {
+            responses: {
+              '200': {
+                description: 'Successful Response',
+                content: {
+                  'application/json': {
+                    schema: { title: 'ItemResponse', type: 'object', properties: {} },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+    const { endpoints } = await parseOpenAPISpec(spec);
+    expect(endpoints[0].responses![0].name).toBe('ItemResponse');
   });
 
   it('extracts inline example from response content', async () => {
@@ -577,8 +602,8 @@ describe('parseOpenAPISpec', () => {
       },
     };
     const { endpoints } = await parseOpenAPISpec(spec);
-    expect(endpoints[0].responses![0].name).toBe('Error — NotFoundError');
-    expect(endpoints[0].responses![1].name).toBe('Error — ValidationError');
+    expect(endpoints[0].responses![0].name).toBe('NotFoundError');
+    expect(endpoints[0].responses![1].name).toBe('ValidationError');
   });
 
   it('falls back to indexed name when variant has no title', async () => {

@@ -398,7 +398,7 @@ describe('parseOpenAPISpec', () => {
     expect(body).toBe('default-value');
   });
 
-  it('generates example from oneOf schema', async () => {
+  it('generates a single response for a single-variant oneOf schema', async () => {
     const spec = {
       openapi: '3.0.0',
       info: { title: 'T', version: '1' },
@@ -420,11 +420,12 @@ describe('parseOpenAPISpec', () => {
       },
     };
     const { endpoints } = await parseOpenAPISpec(spec);
+    expect(endpoints[0].responses).toHaveLength(1);
     const body = JSON.parse(endpoints[0].responses![0].body!);
     expect(body).toBe('string');
   });
 
-  it('generates example from anyOf schema', async () => {
+  it('generates a single response for a single-variant anyOf schema', async () => {
     const spec = {
       openapi: '3.0.0',
       info: { title: 'T', version: '1' },
@@ -446,11 +447,139 @@ describe('parseOpenAPISpec', () => {
       },
     };
     const { endpoints } = await parseOpenAPISpec(spec);
+    expect(endpoints[0].responses).toHaveLength(1);
     const body = JSON.parse(endpoints[0].responses![0].body!);
     expect(body).toBe(0);
   });
 
-  it('generates example from allOf schema', async () => {
+  it('expands multi-variant anyOf into one SpecResponse per variant', async () => {
+    const spec = {
+      openapi: '3.0.0',
+      info: { title: 'T', version: '1' },
+      paths: {
+        '/items': {
+          get: {
+            responses: {
+              '422': {
+                description: 'Validation Error',
+                content: {
+                  'application/json': {
+                    schema: {
+                      anyOf: [
+                        { type: 'object', properties: { code: { type: 'string' } } },
+                        { type: 'object', properties: { message: { type: 'string' } } },
+                        { type: 'object', properties: { detail: { type: 'string' } } },
+                      ],
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+    const { endpoints } = await parseOpenAPISpec(spec);
+    expect(endpoints[0].responses).toHaveLength(3);
+    const statuses = endpoints[0].responses!.map((r) => r.statusCode);
+    expect(statuses).toEqual([422, 422, 422]);
+  });
+
+  it('expands multi-variant oneOf into one SpecResponse per variant', async () => {
+    const spec = {
+      openapi: '3.0.0',
+      info: { title: 'T', version: '1' },
+      paths: {
+        '/items': {
+          get: {
+            responses: {
+              '200': {
+                description: 'OK',
+                content: {
+                  'application/json': {
+                    schema: {
+                      oneOf: [
+                        { type: 'string' },
+                        { type: 'integer' },
+                      ],
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+    const { endpoints } = await parseOpenAPISpec(spec);
+    expect(endpoints[0].responses).toHaveLength(2);
+    expect(JSON.parse(endpoints[0].responses![0].body!)).toBe('string');
+    expect(JSON.parse(endpoints[0].responses![1].body!)).toBe(0);
+  });
+
+  it('uses variant title in name when available', async () => {
+    const spec = {
+      openapi: '3.0.0',
+      info: { title: 'T', version: '1' },
+      paths: {
+        '/items': {
+          get: {
+            responses: {
+              '422': {
+                description: 'Error',
+                content: {
+                  'application/json': {
+                    schema: {
+                      anyOf: [
+                        { title: 'NotFoundError', type: 'object' },
+                        { title: 'ValidationError', type: 'object' },
+                      ],
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+    const { endpoints } = await parseOpenAPISpec(spec);
+    expect(endpoints[0].responses![0].name).toBe('Error — NotFoundError');
+    expect(endpoints[0].responses![1].name).toBe('Error — ValidationError');
+  });
+
+  it('falls back to indexed name when variant has no title', async () => {
+    const spec = {
+      openapi: '3.0.0',
+      info: { title: 'T', version: '1' },
+      paths: {
+        '/items': {
+          get: {
+            responses: {
+              '422': {
+                description: 'Error',
+                content: {
+                  'application/json': {
+                    schema: {
+                      anyOf: [
+                        { type: 'object' },
+                        { type: 'object' },
+                      ],
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+    const { endpoints } = await parseOpenAPISpec(spec);
+    expect(endpoints[0].responses![0].name).toBe('Error (1)');
+    expect(endpoints[0].responses![1].name).toBe('Error (2)');
+  });
+
+  it('does not expand allOf — treats it as a single composed schema', async () => {
     const spec = {
       openapi: '3.0.0',
       info: { title: 'T', version: '1' },
@@ -472,6 +601,7 @@ describe('parseOpenAPISpec', () => {
       },
     };
     const { endpoints } = await parseOpenAPISpec(spec);
+    expect(endpoints[0].responses).toHaveLength(1);
     const body = JSON.parse(endpoints[0].responses![0].body!);
     expect(body).toBe(true);
   });

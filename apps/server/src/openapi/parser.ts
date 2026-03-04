@@ -30,32 +30,58 @@ export async function parseOpenAPISpec(
             const statusCode = parseInt(statusCodeStr, 10);
             if (isNaN(statusCode)) continue;
 
-            let body = '';
-            let schema: object | undefined;
-            const content = (response as any).content;
-            if (content && content['application/json']) {
-              const jsonContent = content['application/json'];
-              if (jsonContent.example) {
-                body = JSON.stringify(jsonContent.example, null, 2);
-              } else if (jsonContent.examples) {
-                const firstExample = Object.values(jsonContent.examples)[0] as any;
-                body = JSON.stringify(firstExample.value || firstExample, null, 2);
-              } else if (jsonContent.schema) {
-                body = JSON.stringify(generateExampleFromSchema(jsonContent.schema), null, 2);
-              }
-              if (jsonContent.schema) {
-                schema = safeClone(jsonContent.schema);
-              }
-            }
+            const description = (response as any).description || `Status ${statusCode}`;
+            const jsonContent = (response as any).content?.['application/json'];
+            const topSchema = jsonContent?.schema;
+            const variants = topSchema?.anyOf ?? topSchema?.oneOf;
 
-            responses.push({
-              statusCode,
-              name: (response as any).description || `Status ${statusCode}`,
-              description: (response as any).description,
-              body,
-              headers: {},
-              schema,
-            });
+            if (variants && Array.isArray(variants) && variants.length > 1) {
+              // Expand each variant into its own SpecResponse
+              for (let i = 0; i < variants.length; i++) {
+                const variant = variants[i];
+                let body = '';
+                if (jsonContent.example) {
+                  body = JSON.stringify(jsonContent.example, null, 2);
+                } else if (jsonContent.examples) {
+                  const firstExample = Object.values(jsonContent.examples)[0] as any;
+                  body = JSON.stringify(firstExample.value || firstExample, null, 2);
+                } else {
+                  body = JSON.stringify(generateExampleFromSchema(variant), null, 2);
+                }
+                responses.push({
+                  statusCode,
+                  name: variant.title ? `${description} — ${variant.title}` : `${description} (${i + 1})`,
+                  description,
+                  body,
+                  headers: {},
+                  schema: safeClone(variant),
+                });
+              }
+            } else {
+              let body = '';
+              let schema: object | undefined;
+              if (jsonContent) {
+                if (jsonContent.example) {
+                  body = JSON.stringify(jsonContent.example, null, 2);
+                } else if (jsonContent.examples) {
+                  const firstExample = Object.values(jsonContent.examples)[0] as any;
+                  body = JSON.stringify(firstExample.value || firstExample, null, 2);
+                } else if (topSchema) {
+                  body = JSON.stringify(generateExampleFromSchema(topSchema), null, 2);
+                }
+                if (topSchema) {
+                  schema = safeClone(topSchema);
+                }
+              }
+              responses.push({
+                statusCode,
+                name: description,
+                description,
+                body,
+                headers: {},
+                schema,
+              });
+            }
           }
         }
 

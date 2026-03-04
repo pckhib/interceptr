@@ -46,6 +46,10 @@ function SpecHeaderEditor({ spec }: { spec: ProjectSpec }) {
     updateSpec.mutate({ specId: spec.id, data: { globalHeaders: toRecord(next) } });
   };
 
+  const toggleApplyToAll = () => {
+    updateSpec.mutate({ specId: spec.id, data: { applyGlobalHeadersToAll: !spec.applyGlobalHeadersToAll } });
+  };
+
   const addRow = () => setRows((prev) => [...prev, { key: '', value: '' }]);
 
   const updateRow = (i: number, field: 'key' | 'value', val: string) =>
@@ -88,6 +92,25 @@ function SpecHeaderEditor({ spec }: { spec: ProjectSpec }) {
         >
           <Plus className="w-3 h-3" />
           Add
+        </button>
+      </div>
+
+      {/* Apply to all requests toggle */}
+      <div className="flex items-center justify-between py-1.5 px-2 rounded-lg bg-muted/60 border border-border/30">
+        <div className="flex flex-col">
+          <span className="text-[9px] font-black uppercase tracking-widest text-foreground/60">Apply to all requests</span>
+          <span className="text-[9px] text-muted-foreground/50 font-medium">Include unmatched endpoints</span>
+        </div>
+        <button
+          onClick={toggleApplyToAll}
+          className={cn(
+            'px-2.5 py-1 text-[9px] font-black uppercase tracking-widest rounded border transition-all duration-150',
+            spec.applyGlobalHeadersToAll
+              ? 'bg-primary/15 text-primary border-primary/30'
+              : 'bg-muted text-muted-foreground/60 border-border/40 hover:text-foreground hover:bg-accent/40',
+          )}
+        >
+          {spec.applyGlobalHeadersToAll ? 'On' : 'Off'}
         </button>
       </div>
 
@@ -205,6 +228,7 @@ export function GlobalHeadersTrigger({
     (sum, s) => sum + Object.keys(s.globalHeaders ?? {}).length,
     0,
   );
+  const applyToAll = activeSpecs.some((s) => s.applyGlobalHeadersToAll);
 
   return (
     <button
@@ -225,6 +249,14 @@ export function GlobalHeadersTrigger({
           open ? 'bg-primary/20 border-primary/30 text-primary' : 'bg-muted border-border text-muted-foreground',
         )}>
           {totalHeaders}
+        </span>
+      )}
+      {applyToAll && (
+        <span className={cn(
+          'px-1.5 py-0.5 rounded text-[8px] font-black border uppercase tracking-wider',
+          open ? 'bg-primary/20 border-primary/30 text-primary' : 'bg-muted border-border text-muted-foreground',
+        )}>
+          All
         </span>
       )}
     </button>

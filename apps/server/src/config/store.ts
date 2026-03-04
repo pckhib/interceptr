@@ -319,13 +319,14 @@ export class ConfigStore {
 
   updateSpec(
     specId: string,
-    updates: Partial<Pick<ProjectSpec, 'name' | 'upstreamUrl' | 'active' | 'globalHeaders'>>,
+    updates: Partial<Pick<ProjectSpec, 'name' | 'upstreamUrl' | 'active' | 'globalHeaders' | 'applyGlobalHeadersToAll'>>,
   ): ProjectSpec | undefined {
     const spec = this.specs.get(specId);
     if (!spec) return undefined;
     if (updates.name !== undefined) spec.name = updates.name;
     if (updates.upstreamUrl !== undefined) spec.upstreamUrl = updates.upstreamUrl;
     if (updates.globalHeaders !== undefined) spec.globalHeaders = updates.globalHeaders;
+    if (updates.applyGlobalHeadersToAll !== undefined) spec.applyGlobalHeadersToAll = updates.applyGlobalHeadersToAll;
     if (updates.active !== undefined) {
       spec.active = updates.active;
       // Only one spec can be active at a time

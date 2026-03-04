@@ -40,7 +40,7 @@ export function useUpdateSpec() {
       data,
     }: {
       specId: string;
-      data: { name?: string; upstreamUrl?: string; active?: boolean; globalHeaders?: Record<string, string> };
+      data: { name?: string; upstreamUrl?: string; active?: boolean; globalHeaders?: Record<string, string>; applyGlobalHeadersToAll?: boolean };
     }) => api.specs.update(specId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['specs'] });

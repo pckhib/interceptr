@@ -67,7 +67,17 @@ export async function handleProxyRequest(req: Request): Promise<Response> {
   }
 
   const mode = endpoint?.mode ?? 'passthrough';
-  const globalHeaders = endpoint ? (store.getSpec(endpoint.specId)?.globalHeaders ?? {}) : {};
+
+  // Headers from all active specs with "apply to all requests" enabled
+  const broadcastHeaders: Record<string, string> = {};
+  for (const spec of store.getSpecs()) {
+    if (spec.active && spec.applyGlobalHeadersToAll) {
+      Object.assign(broadcastHeaders, spec.globalHeaders ?? {});
+    }
+  }
+  // Per-spec headers for the matched endpoint take priority over broadcast headers
+  const specHeaders = endpoint ? (store.getSpec(endpoint.specId)?.globalHeaders ?? {}) : {};
+  const globalHeaders = { ...broadcastHeaders, ...specHeaders };
 
   let response: Response;
 

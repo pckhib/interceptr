@@ -15,6 +15,7 @@ export interface ProjectSpec {
   active: boolean;
   metadata: SpecMetadata;
   globalHeaders?: Record<string, string>;
+  applyGlobalHeadersToAll?: boolean;
 }
 
 export interface GlobalConfig {

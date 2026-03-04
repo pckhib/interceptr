@@ -99,7 +99,7 @@ describe('GlobalHeadersPanel', () => {
     const user = userEvent.setup();
     render(<GlobalHeadersPanel open={true} />);
     const keyInput = screen.getByDisplayValue('x-custom');
-    await user.triple_click?.(keyInput) ?? await user.click(keyInput);
+    await user.tripleClick(keyInput);
     await user.clear(keyInput);
     await user.type(keyInput, 'new-key');
     await user.tab();
